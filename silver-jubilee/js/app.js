@@ -21,12 +21,17 @@
   let phase = 'curtain';        // curtain | story | gift | wishes | finale
   let sceneIdx = 0;             // pointer into SCENES
   let busy = false;             // mid-transition lock
-  let timers = [];
+  let timers = [];              // scene timers (cleared on every scene change)
+  let fxTimers = [];            // transition timers (NOT cleared by scene changes)
   let renderToken = 0;          // invalidates async work when scene changes
 
   const PHOTO_MS = 2900;        // time each photo holds
   const after = (ms, fn) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
   const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+  // transition timers live in their own bucket so renderScene()'s clearTimers()
+  // can never kill the timer that removes the film-reel overlay.
+  const fxAfter = (ms, fn) => { const t = setTimeout(fn, ms); fxTimers.push(t); return t; };
+  const clearFx = () => { fxTimers.forEach(clearTimeout); fxTimers = []; };
 
   /* ---- palette ------------------------------------------------------------ */
   function applyPalette(p) {
@@ -239,6 +244,7 @@
      ====================================================================== */
   function timeTravel(opts, done) {
     busy = true;
+    clearFx();                                          // cancel any prior transition
     armChapterReady(false);
     A.reel(opts.big ? 1.3 : 0.95);
     if (opts.big) curtains.classList.remove('open');   // snap shut for the big jump
@@ -252,15 +258,15 @@
 
     const leaderNum = fx.querySelector('.leader-num');
     const seq = opts.big ? ['3', '2', '1'] : ['2', '1'];
-    seq.forEach((n, k) => after(180 + k * 230, () => { if (leaderNum) leaderNum.textContent = n; }));
+    seq.forEach((n, k) => fxAfter(180 + k * 230, () => { if (leaderNum) leaderNum.textContent = n; }));
 
     const mid = opts.big ? 950 : 700;
-    after(mid, () => {
-      done && done();
+    fxAfter(mid, () => {
+      done && done();                                   // render the next scene underneath
       fx.querySelector('.flash')?.classList.add('go');
-      if (opts.big) after(120, () => curtains.classList.add('open'));
+      if (opts.big) fxAfter(120, () => curtains.classList.add('open'));
     });
-    after(mid + 520, () => {
+    fxAfter(mid + 520, () => {                           // ALWAYS clears the overlay
       fx.classList.remove('active');
       fx.innerHTML = '';
       busy = false;
