@@ -36,9 +36,11 @@ file-loading quirks for audio/video.)
 
 | Focus | What's in the prototype |
 |---|---|
-| **Theme** | The magic show is the through-line everywhere: velvet curtains, a glowing wand as the *only* navigation, sparkle bursts, and film-reel transitions. The "edit" treatment is old-Bollywood / vintage: film grain, sepia title cards, Polaroid frames for colour years, sprocket-hole film strips for the B&W prologue. |
-| **Usage / flow** | The complete journey is wired: Opening → Prologue (1974, 1982) → 25 colour chapters → Gift Box reveal → Wishes Wall → Finale. Full-screen, no scrolling inside chapters, subtle "Year X of 25" progress indicator, milestone years glow. |
-| **Transitions** | A reusable **time-travel transition** (film-reel spin + vintage countdown leader + tunnel + flash) fires between every scene. Curtains part on open and snap shut on the big jump. Photos enter via Polaroid-drop / Ken Burns / pop-up / zoom / collage. Colour evolves gradually across all 25 years via one interpolation function. |
+| **Theme (the magic act)** | The show is the through-line everywhere. A **pre-show** is spoken in front of the *closed* curtain to build curiosity; tapping the wand travels back in time and the curtain finally rises. Special years are staged as **magic tricks** — "A Star Is Born", twin stars, the wedding's "Two Stars Collide", and the signature **bunny-from-a-hat** as each child arrives — each with a showman's headline. Vintage Bollywood/Polaroid treatment throughout: film grain, sepia title cards, Polaroid colour frames, sprocket-hole B&W film strips. |
+| **Usage / flow** | Pre-show → time-travel → Prologue (1974, 1982) → 25 colour chapters → Gift Box reveal → Wishes Wall → Finale. Full-screen, no scrolling inside chapters, "Year X of 25" progress, milestone glow. **Two wands are the only navigation** (no arrows/menus). |
+| **Transitions** | The signature **time-travel transition**: a film reel rolls while the **year ticks** across time (2026→1974 on the opening sweep), so it feels like the reel carries you between years. Deliberately slowed/cinematic; timings centralised in `MOTION` (see `DESIGN.md`). Photos enter via Polaroid-drop / Ken Burns / pop-up / zoom / collage. Colour blooms B&W→gold across 25 years via one interpolation function. |
+
+See **`DESIGN.md`** for the full brand contract (palette, type, motion, voice, anti-patterns) — the discipline borrowed from the Open Design `DESIGN.md` approach.
 
 ---
 

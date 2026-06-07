@@ -74,7 +74,10 @@ function photo(year, n, caption, anim) {
 const PROLOGUE = [
   {
     kind: 'prologue', year: 1974, label: '1974', title: 'Sathish Born',
-    mood: 'Pure B&W · film grain', milestone: false,
+    mood: 'Pure B&W · film grain', milestone: true,
+    headline: 'A Star Is Born',
+    subhead: 'Not just the star of our show — a real one, born to do wonders.',
+    trick: 'starbirth',
     narration: 'Our story begins long before you knew us…',
     photos: [
       photo(1974, 1, 'Before anyone called him Appa.', 'kenburns'),
@@ -83,7 +86,10 @@ const PROLOGUE = [
   },
   {
     kind: 'prologue', year: 1982, label: '1982', title: 'Preethi Born',
-    mood: 'B&W · softer grain', milestone: false,
+    mood: 'B&W · softer grain', milestone: true,
+    headline: 'Enter the Second Star',
+    subhead: 'Somewhere across the sky, the perfect match was lit.',
+    trick: 'twinstars',
     narration: 'And somewhere, not far away, she arrived too.',
     photos: [
       photo(1982, 1, 'The other half of the story.', 'kenburns'),
@@ -91,6 +97,18 @@ const PROLOGUE = [
     ],
   },
 ];
+
+/* The magic act — special years get a showman's headline + a visual trick.
+   trick ∈ starbirth | twinstars | union | hat | sparkleburst                  */
+const ACTS = {
+  2001: { h: 'Two Stars Collide',           s: 'And the real magic begins.',                 trick: 'union' },
+  2002: { h: 'For Our Next Trick…',         s: 'From an empty hat — a brand-new wonder appears.', trick: 'hat' },
+  2007: { h: 'Abracadabra… Once More!',     s: 'The greatest trick of all: one more.',        trick: 'hat' },
+  2011: { h: 'Ten Years of Magic',          s: 'A whole decade — and the spell holds strong.', trick: 'sparkleburst' },
+  2014: { h: 'A Home, Conjured from Dreams', s: 'Four walls, built entirely of love.',         trick: 'sparkleburst' },
+  2021: { h: 'Two Decades, Still Spellbound', s: 'Twenty years, and the trick never gets old.', trick: 'sparkleburst' },
+  2025: { h: 'The Grand Finale Nears…',     s: 'One last sunrise before the reveal.',          trick: 'sparkleburst' },
+};
 
 /* base data for the 25 colour chapters (from the brief) */
 const COLOUR_BASE = [
@@ -159,6 +177,7 @@ const CHAPTERS = COLOUR_BASE.map((c, i) => {
   for (let n = 1; n <= count; n++) {
     photos.push(photo(c.year, n, caps[(n - 1) % caps.length], ANIM_CYCLE[(i + n) % ANIM_CYCLE.length]));
   }
+  const act = ACTS[c.year];
   return {
     kind: 'chapter',
     index: i,                       // 0-based colour-chapter index
@@ -169,6 +188,9 @@ const CHAPTERS = COLOUR_BASE.map((c, i) => {
     tag: c.tag || null,
     milestone: !!c.milestone,
     mood: c.milestone ? 'Milestone · richer & longer' : 'A chapter of the everyday',
+    headline: act ? act.h : c.title,   // the showman's line for special years
+    subhead: act ? act.s : null,
+    trick: act ? act.trick : null,     // visual magic set-piece, if any
     narration: `${c.title}${c.tag ? ' — ' + c.tag : ''}`,
     palette: paletteForColourChapter(i),
     photos,
@@ -180,9 +202,13 @@ const SCENES = [...PROLOGUE.map(p => ({ ...p, palette: PROLOGUE_PALETTE })), ...
 
 /* opening + finale copy */
 const COPY = {
-  openingQuestion: 'What’s so special about today?',
-  openingSub: 'ಇಂದು ಏನು ವಿಶೇಷ?',                         // Kannada
-  whisper: 'Our story begins long before you knew us…',
+  /* the pre-show — spoken in front of the CLOSED curtain, building curiosity */
+  preshow: [
+    { text: 'Ladies and gentlemen… gather close.', sub: '' },
+    { text: 'What’s so special about today?', sub: 'ಇಂದು ಏನು ವಿಶೇಷ?' },
+    { text: 'To uncover the secret… we must travel back in time.', sub: '' },
+  ],
+  wandCue: 'tap the wand to begin',
   finaleTitle: '25 Years & Counting…',
   finaleSub: '೨೫ ವರ್ಷಗಳ ಪ್ರೀತಿ',
   finaleWish: 'To Preethi & Sathi — thank you for showing us what forever looks like.\nHappy Silver Jubilee. With all our love, Preru & Sammu.',

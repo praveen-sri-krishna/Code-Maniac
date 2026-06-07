@@ -25,7 +25,15 @@
   let fxTimers = [];            // transition timers (NOT cleared by scene changes)
   let renderToken = 0;          // invalidates async work when scene changes
 
-  const PHOTO_MS = 2900;        // time each photo holds
+  /* ---- MOTION as data (single source of truth for timing — see DESIGN.md) -- */
+  const MOTION = {
+    travel:    1500,   // chapter-to-chapter time-travel (slowed, was ~700)
+    travelBig: 2600,   // the big opening sweep back to 1974
+    titleHold: 1700,   // how long a chapter title card lingers
+    trick:     3200,   // how long a magic set-piece plays
+    photo:     3100,   // how long each photo holds
+  };
+  const PHOTO_MS = MOTION.photo;
   const after = (ms, fn) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
   const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
   // transition timers live in their own bucket so renderScene()'s clearTimers()
@@ -44,25 +52,44 @@
   }
 
   /* =========================================================================
-     OPENING — curtains, the question, the wand
+     THE PRE-SHOW — spoken in front of the CLOSED curtain.
+     A host builds curiosity; only when the wand is tapped do we travel back
+     and the curtains finally rise on the story.
      ====================================================================== */
   function buildOpening() {
     applyPalette({ bg1: '#1a0606', bg2: '#3a0d0d', accent: '#d9a441', sepia: 0, sat: 1, grayscale: 0 });
+    phase = 'curtain';
+    curtains.classList.remove('open');           // curtains stay CLOSED for the pre-show
+    hud.classList.remove('visible');
+
+    const lines = COPY.preshow.map((l, i) =>
+      `<p class="ps-line" data-i="${i}">${l.text}${l.sub ? `<span class="ps-kn">${l.sub}</span>` : ''}</p>`
+    ).join('');
+
     sceneLayer.innerHTML = `
-      <div class="opening">
+      <div class="preshow">
         <div class="spotlight"></div>
-        <div class="opening-inner">
+        <div class="preshow-inner">
           <div class="show-mark">✦  A MAGIC SHOW  ✦</div>
-          <h1 class="question">${COPY.openingQuestion}</h1>
-          <p class="question-sub">${COPY.openingSub}</p>
-          <div class="wand opening-wand" id="opening-wand" role="button" aria-label="Tap the magic wand">
+          <div class="preshow-lines">${lines}</div>
+          <div class="wand opening-wand hidden" id="opening-wand" role="button" aria-label="Tap the magic wand">
             ${wandSVG()}
-            <span class="wand-hint">tap the wand</span>
+            <span class="wand-hint">${COPY.wandCue}</span>
           </div>
         </div>
       </div>`;
-    curtains.classList.remove('open');           // closed to start
-    after(120, () => curtains.classList.add('open'));   // curtains rise
+
+    // reveal the host's lines one at a time (cross-fade), then the wand
+    const els = Array.from(sceneLayer.querySelectorAll('.ps-line'));
+    const HOLD = 2600;
+    els.forEach((el, i) => after(500 + i * HOLD, () => {
+      els.forEach(l => l.classList.remove('show'));
+      el.classList.add('show');
+    }));
+    after(500 + els.length * HOLD - 400, () => {
+      const w = $('#opening-wand');
+      if (w) w.classList.remove('hidden');
+    });
     $('#opening-wand').addEventListener('click', startJourney, { once: true });
   }
 
@@ -72,10 +99,12 @@
     const w = $('#opening-wand');
     if (w) w.classList.add('cast');
     burstSparkles(window.innerWidth / 2, window.innerHeight * 0.62);
-    after(520, () => {
+    after(560, () => {
       phase = 'story';
       sceneIdx = 0;
-      timeTravel({ big: true }, () => renderScene(sceneIdx));
+      // the long sweep: from this very year all the way back to 1974
+      timeTravel({ big: true, from: new Date().getFullYear(), to: SCENES[0].year },
+                 () => renderScene(sceneIdx));
     });
   }
 
@@ -105,7 +134,7 @@
 
         <div class="reel-window" id="reel-window"></div>
 
-        <div class="narration" id="narration">
+        <div class="narration${scene.trick ? ' hold' : ''}" id="narration">
           <span class="nar-dot"></span>
           <span class="nar-text">${scene.narration}</span>
         </div>
@@ -115,18 +144,70 @@
     setWandSparkle(scene.palette.accent);
     armChapterReady(false);
 
-    // title card holds, then the photo reel plays
-    after(1500, () => {
+    // title card holds, then — for special years — the magic trick plays,
+    // and only after the trick do the photos begin.
+    after(MOTION.titleHold, () => {
       if (token !== renderToken) return;
       const tc = $('#title-card');
       if (tc) tc.classList.add('lift');
-      playPhotos(scene, token);
+      if (scene.trick) playTrick(scene, token, () => playPhotos(scene, token));
+      else playPhotos(scene, token);
     });
+  }
+
+  /* ---- the magic act: a visual trick + the showman's headline ------------- */
+  function playTrick(scene, token, cb) {
+    const win = $('#reel-window');
+    if (!win) { cb && cb(); return; }
+    win.innerHTML =
+      `<div class="trick trick-${scene.trick}">
+         ${trickMarkup(scene.trick)}
+         <div class="trick-words">
+           <h2 class="trick-head">${scene.headline}</h2>
+           ${scene.subhead ? `<p class="trick-sub">${scene.subhead}</p>` : ''}
+         </div>
+       </div>`;
+    A.sparkle();
+    burstSparkles(window.innerWidth / 2, window.innerHeight * 0.42, 16);
+    after(MOTION.trick, () => {
+      if (token !== renderToken) return;
+      const t = win.querySelector('.trick');
+      if (t) t.classList.add('out');
+      after(560, () => { if (token === renderToken) cb && cb(); });
+    });
+  }
+
+  function trickMarkup(kind) {
+    if (kind === 'hat') {
+      return `<div class="magic-hat">
+          <div class="smoke"></div>
+          <div class="bunny">${bunnySVG()}</div>
+          <div class="hat-back"></div>
+          <div class="hat-top"></div>
+          <div class="hat-brim"></div>
+        </div>`;
+    }
+    if (kind === 'union') {
+      return `<div class="stars-union"><span class="ustar a">${starSVG()}</span><span class="ustar b">${starSVG()}</span><div class="union-flash"></div></div>`;
+    }
+    if (kind === 'twinstars') {
+      return `<div class="twin-stars"><span class="tstar a">${starSVG()}</span><span class="tstar b">${starSVG()}</span></div>`;
+    }
+    if (kind === 'starbirth') {
+      return `<div class="star-birth"><span class="bigstar">${starSVG()}</span><div class="rays"></div></div>`;
+    }
+    return `<div class="sparkle-burst"></div>`; // sparkleburst
   }
 
   function playPhotos(scene, token) {
     const win = $('#reel-window');
     if (!win) return;
+    // a trick was holding the narration back — now let it fade in with the photos
+    const nar = $('#narration');
+    if (nar && nar.classList.contains('hold')) {
+      nar.classList.remove('hold');
+      nar.style.animation = 'fadeUp 1.1s ease both';
+    }
     let p = 0;
 
     const showNext = () => {
@@ -222,12 +303,14 @@
       const target = sceneIdx + dir;
       if (target < 0) return;
       if (target >= SCENES.length) { enterGift(); return; }
+      const from = SCENES[sceneIdx].year, to = SCENES[target].year;
       sceneIdx = target;
       A.sparkle();
-      timeTravel({}, () => renderScene(sceneIdx));
+      timeTravel({ from, to }, () => renderScene(sceneIdx));
     } else if (phase === 'gift' && dir < 0) {
+      const from = SCENES[SCENES.length - 1].year;
       phase = 'story'; sceneIdx = SCENES.length - 1;
-      timeTravel({}, () => renderScene(sceneIdx));
+      timeTravel({ from, to: from }, () => renderScene(sceneIdx));
     }
   }
 
@@ -240,37 +323,57 @@
 
   /* =========================================================================
      THE TIME-TRAVEL TRANSITION  (the heartbeat of the show)
-     film-reel spin + vintage countdown leader + tunnel flash
+     A film reel rolls and the YEAR ticks across time — so it truly feels like
+     the reel is carrying you from one year to another. Deliberately unhurried.
+     Durations are centralised in MOTION (see top) — "motion as data".
      ====================================================================== */
   function timeTravel(opts, done) {
     busy = true;
     clearFx();                                          // cancel any prior transition
     armChapterReady(false);
-    A.reel(opts.big ? 1.3 : 0.95);
-    if (opts.big) curtains.classList.remove('open');   // snap shut for the big jump
+    const big = !!opts.big;
+    const dur = big ? MOTION.travelBig : MOTION.travel;
+    A.reel((big ? MOTION.travelBig : MOTION.travel) / 1000);
+    if (big) curtains.classList.remove('open');         // snap shut for the big jump
 
     fx.innerHTML = `
-      <div class="tunnel ${opts.big ? 'big' : ''}"></div>
+      <div class="tunnel ${big ? 'big' : ''}"></div>
       <div class="film-reel">${reelSVG()}</div>
-      <div class="leader"><div class="leader-sweep"></div><span class="leader-num">3</span></div>
+      <div class="leader"><div class="leader-sweep"></div></div>
+      <div class="time-year" id="time-year"></div>
       <div class="flash"></div>`;
     fx.classList.add('active');
 
-    const leaderNum = fx.querySelector('.leader-num');
-    const seq = opts.big ? ['3', '2', '1'] : ['2', '1'];
-    seq.forEach((n, k) => fxAfter(180 + k * 230, () => { if (leaderNum) leaderNum.textContent = n; }));
+    // the year spins across time
+    if (opts.from != null && opts.to != null) {
+      animateYear($('#time-year'), opts.from, opts.to, Math.round(dur * 0.82));
+    }
 
-    const mid = opts.big ? 950 : 700;
+    const mid = Math.round(dur * 0.72);
     fxAfter(mid, () => {
       done && done();                                   // render the next scene underneath
       fx.querySelector('.flash')?.classList.add('go');
-      if (opts.big) fxAfter(120, () => curtains.classList.add('open'));
+      if (big) fxAfter(180, () => curtains.classList.add('open'));   // curtains finally rise
     });
-    fxAfter(mid + 520, () => {                           // ALWAYS clears the overlay
+    fxAfter(dur, () => {                                 // ALWAYS clears the overlay
       fx.classList.remove('active');
       fx.innerHTML = '';
       busy = false;
     });
+  }
+
+  /* count a year value from → to over a duration (eased) */
+  function animateYear(el, from, to, dur) {
+    if (!el) return;
+    const start = performance.now();
+    const tick = (now) => {
+      if (!el.isConnected) return;
+      const t = Math.min(1, (now - start) / dur);
+      const ease = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(from + (to - from) * ease);
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }
 
   /* =========================================================================
@@ -355,6 +458,7 @@
           <button class="ghost-btn finale-jump" id="to-finale">See the Finale →</button>
         </div>`;
       progress.innerHTML = `<span class="p-dot"></span> The Wishes Wall`;
+      wandPrev.classList.add('hidden'); wandNext.classList.add('hidden');
       seedWishes();
       $('#wish-form').addEventListener('submit', onWish);
       $('#to-finale').addEventListener('click', enterFinale, { once: true });
@@ -418,7 +522,7 @@
           </div>
         </div>`;
       progress.innerHTML = `<span class="p-dot"></span> Happy Silver Jubilee`;
-      wandPrev.classList.add('hidden');
+      wandPrev.classList.add('hidden'); wandNext.classList.add('hidden');
       runConfetti();
       $('#replay').addEventListener('click', () => location.reload(), { once: true });
     });
@@ -488,6 +592,23 @@
       }).join('')}
     </svg>`;
   }
+  function starSVG() {
+    return `<svg viewBox="0 0 100 100" class="star-svg"><path d="M50 4 l12 28 30 2 -23 20 8 30 -27 -17 -27 17 8 -30 -23 -20 30 -2z"
+      fill="var(--accent)" stroke="#fff6dd" stroke-width="1.5"/></svg>`;
+  }
+  function bunnySVG() {
+    return `<svg viewBox="0 0 120 140" class="bunny-svg">
+      <ellipse cx="42" cy="44" rx="13" ry="40" fill="#fbf3e2"/>
+      <ellipse cx="78" cy="44" rx="13" ry="40" fill="#fbf3e2"/>
+      <ellipse cx="42" cy="48" rx="6" ry="28" fill="#f2b8c6"/>
+      <ellipse cx="78" cy="48" rx="6" ry="28" fill="#f2b8c6"/>
+      <circle cx="60" cy="96" r="34" fill="#fbf3e2"/>
+      <circle cx="48" cy="90" r="4.5" fill="#3a2a22"/>
+      <circle cx="72" cy="90" r="4.5" fill="#3a2a22"/>
+      <path d="M55 102 q5 5 10 0" stroke="#3a2a22" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <circle cx="60" cy="100" r="3" fill="#f2a0b4"/>
+    </svg>`;
+  }
 
   function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
@@ -502,11 +623,13 @@
     document.body.appendChild(panel);
     const grid = panel.querySelector('#dir-grid');
     const add = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.onclick = () => { panel.classList.remove('open'); fn(); }; grid.appendChild(b); };
+    // jumping past the opening means the curtain must already be raised
+    const raise = () => curtains.classList.add('open');
     add('Opening', () => { phase = 'curtain'; buildOpening(); });
-    SCENES.forEach((s, i) => add(s.kind === 'prologue' ? s.year : `Ch${s.chapterNo}·${s.year}`, () => { phase = 'story'; sceneIdx = i; busy = false; A.unlock(); renderScene(i); }));
-    add('Gift Box', () => { busy = false; A.unlock(); enterGift(); });
-    add('Wishes', () => { busy = false; A.unlock(); enterWishes(); });
-    add('Finale', () => { busy = false; A.unlock(); enterFinale(); });
+    SCENES.forEach((s, i) => add(s.kind === 'prologue' ? s.year : `Ch${s.chapterNo}·${s.year}`, () => { raise(); phase = 'story'; sceneIdx = i; busy = false; A.unlock(); renderScene(i); }));
+    add('Gift Box', () => { raise(); busy = false; A.unlock(); enterGift(); });
+    add('Wishes', () => { raise(); busy = false; A.unlock(); enterWishes(); });
+    add('Finale', () => { raise(); busy = false; A.unlock(); enterFinale(); });
 
     $('#dir-toggle').addEventListener('click', () => panel.classList.toggle('open'));
   }

@@ -26,11 +26,19 @@
 
     <!-- Heads-up display: the wands + the progress indicator -->
     <div id="hud">
-      <button id="wand-prev" class="wand nav-wand prev hidden" aria-label="Previous chapter">
-        <span class="nav-arrow">‹</span>
+      <button id="wand-prev" class="wand nav-wand prev hidden" aria-label="Travel back a year">
+        <svg viewBox="0 0 44 44" class="navwand-svg" aria-hidden="true">
+          <line x1="10" y1="34" x2="29" y2="15" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+          <path class="nw-star" d="M33 7 l2.2 5.4 5.8 .9 -4.4 4 1.1 5.7 -5.7-3.2 -5.6 3.2 1.1-5.7 -4.4-4 5.8-.9z" fill="currentColor"/>
+        </svg>
+        <span class="wand-cue">back</span>
       </button>
-      <button id="wand-next" class="wand nav-wand next hidden" aria-label="Next chapter">
-        <span class="nav-arrow">›</span>
+      <button id="wand-next" class="wand nav-wand next hidden" aria-label="Travel forward a year">
+        <svg viewBox="0 0 44 44" class="navwand-svg" aria-hidden="true">
+          <line x1="10" y1="34" x2="29" y2="15" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+          <path class="nw-star" d="M33 7 l2.2 5.4 5.8 .9 -4.4 4 1.1 5.7 -5.7-3.2 -5.6 3.2 1.1-5.7 -4.4-4 5.8-.9z" fill="currentColor"/>
+        </svg>
+        <span class="wand-cue">next</span>
       </button>
       <div id="progress" class="progress"></div>
     </div>
