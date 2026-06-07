@@ -314,8 +314,14 @@
     }
   }
 
-  wandNext.addEventListener('click', () => go(+1));
-  wandPrev.addEventListener('click', () => go(-1));
+  /* tap feedback: the wand flares and throws a few sparkles at its corner */
+  function tapWand(el) {
+    const r = el.getBoundingClientRect();
+    burstSparkles(r.left + r.width / 2, r.top + r.height * 0.34, 12);
+    el.classList.remove('tapped'); void el.offsetWidth; el.classList.add('tapped');
+  }
+  wandNext.addEventListener('click', () => { if (!busy) tapWand(wandNext); go(+1); });
+  wandPrev.addEventListener('click', () => { if (!busy) tapWand(wandPrev); go(-1); });
   window.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight') go(+1);
     if (e.key === 'ArrowLeft') go(-1);
@@ -479,7 +485,7 @@
     const note = document.createElement('div');
     note.className = 'wish-note';
     note.style.setProperty('--rot', (Math.random() * 8 - 4) + 'deg');
-    note.innerHTML = `<div class="pin"></div><p class="wn-msg">${escapeHtml(w.msg)}</p><p class="wn-name">— ${escapeHtml(w.name)}</p>`;
+    note.innerHTML = `<div class="pin"></div><p class="wn-msg">${escapeHtml(w.msg)}</p><p class="wn-name">${escapeHtml(w.name)}</p>`;
     after(delay, () => {
       wall.prepend(note);
       void note.offsetWidth;
@@ -569,17 +575,22 @@
     })();
   }
 
+  /* one premium wand, used everywhere (opening + both nav corners) */
   function wandSVG() {
-    return `<svg viewBox="0 0 120 120" class="wand-svg">
-      <defs><radialGradient id="tip" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#fff"/><stop offset="60%" stop-color="var(--accent)"/>
-        <stop offset="100%" stop-color="transparent"/></radialGradient></defs>
-      <g class="wand-rot">
-        <rect x="56" y="34" width="8" height="58" rx="4" fill="#2a1a10" stroke="#000" stroke-width="1"/>
-        <rect x="54" y="86" width="12" height="10" rx="3" fill="#e8d9b0"/>
-        <rect x="54" y="30" width="12" height="10" rx="3" fill="#e8d9b0"/>
-        <circle cx="60" cy="30" r="20" fill="url(#tip)"/>
-        <path class="wand-star" d="M60 16 l4 9 10 1 -7 7 2 10 -9 -5 -9 5 2 -10 -7 -7 10 -1z" fill="var(--accent)"/>
+    return `<svg viewBox="0 0 100 100" class="wand-svg" aria-hidden="true">
+      <g class="wand-body">
+        <line x1="27" y1="77" x2="61" y2="37" stroke="#160d07" stroke-width="8" stroke-linecap="round"/>
+        <line x1="27" y1="77" x2="61" y2="37" stroke="#3c2616" stroke-width="3.6" stroke-linecap="round"/>
+        <circle cx="29" cy="75" r="3.8" fill="#c9a44a"/>
+        <circle cx="58.5" cy="39.5" r="3.1" fill="#e3c270"/>
+      </g>
+      <g class="wand-tip">
+        <path class="wand-star" d="M64 17 l4.6 10.1 11 1 -8.2 7.4 2.2 10.9 -9.6-5.8 -9.6 5.8 2.2-10.9 -8.2-7.4 11-1z"
+              fill="#ecc664" stroke="#fff4d2" stroke-width="1.2"/>
+        <circle cx="60.5" cy="29.5" r="1.9" fill="#fffaf0" opacity="0.95"/>
+        <path class="wand-mini m1" d="M84 23 l1.3 2.9 2.9 1.3 -2.9 1.3 -1.3 2.9 -1.3-2.9 -2.9-1.3 2.9-1.3z" fill="#fff1c8"/>
+        <path class="wand-mini m2" d="M49 15 l1 2.2 2.2 1 -2.2 1 -1 2.2 -1-2.2 -2.2-1 2.2-1z" fill="#f1d385"/>
+        <path class="wand-mini m3" d="M81 45 l1 2.2 2.2 1 -2.2 1 -1 2.2 -1-2.2 -2.2-1 2.2-1z" fill="#f1d385"/>
       </g></svg>`;
   }
   function reelSVG() {
@@ -642,6 +653,8 @@
   });
 
   /* ---- boot --------------------------------------------------------------- */
+  wandPrev.insertAdjacentHTML('afterbegin', wandSVG());   // same wand in both corners
+  wandNext.insertAdjacentHTML('afterbegin', wandSVG());
   buildOpening();
   buildDirector();
 })();

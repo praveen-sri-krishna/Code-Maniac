@@ -60,29 +60,62 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 /* =============================================================================
-   CURTAINS
+   CURTAINS — deep velvet panels + a draped pelmet (premium, realistic folds)
    ========================================================================== */
 #curtains { position: absolute; inset: 0; z-index: 50; pointer-events: none; }
-.valance {
-  position: absolute; top: 0; left: 0; right: 0; height: 12vh; z-index: 3;
-  background:
-    repeating-linear-gradient(90deg, #5a0808 0 16px, #7a0d0d 16px 34px, #4a0606 34px 50px);
-  border-bottom: 4px solid var(--gold);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-  clip-path: polygon(0 0,100% 0,100% 70%,92% 100%,84% 70%,76% 100%,68% 70%,60% 100%,52% 70%,44% 100%,36% 70%,28% 100%,20% 70%,12% 100%,8% 70%,0 100%);
-}
+
+/* the two panels: soft vertical folds via layered gradients */
 .curtain {
-  position: absolute; top: 0; bottom: 0; width: 52%;
+  position: absolute; top: 0; bottom: 0; width: 54%; z-index: 1;
   background:
+    /* sheen + top/bottom shading */
+    linear-gradient(180deg, rgba(0,0,0,0.35), transparent 14%, transparent 72%, rgba(0,0,0,0.55)),
+    /* the rounded velvet folds */
     repeating-linear-gradient(90deg,
-      #3c0606 0 14px, #6a0a0a 14px 30px, #8a1212 30px 40px, #5a0808 40px 56px);
-  box-shadow: inset -30px 0 40px rgba(0,0,0,0.6), inset 30px 0 40px rgba(0,0,0,0.6);
-  transition: transform 1.6s cubic-bezier(.7,0,.2,1);
+      #2c0606 0, #5a0d0d 26px, #7e1717 40px, #9a2020 47px, #7e1717 54px, #5a0d0d 68px, #2c0606 94px);
+  background-blend-mode: multiply, normal;
+  box-shadow: inset 0 0 70px rgba(0,0,0,0.55);
 }
-.curtain.left  { left: 0;  transform-origin: left center; }
-.curtain.right { right: 0; transform-origin: right center; }
-#curtains.open .curtain.left  { transform: translateX(-101%) skewY(2deg); }
-#curtains.open .curtain.right { transform: translateX(101%) skewY(-2deg); }
+.curtain.left  { left: 0;  transform-origin: left center;
+  border-right: 2px solid rgba(201,150,63,0.35);
+  box-shadow: inset -22px 0 44px rgba(0,0,0,0.45), inset 0 0 70px rgba(0,0,0,0.4); }
+.curtain.right { right: 0; transform-origin: right center;
+  border-left: 2px solid rgba(201,150,63,0.35);
+  box-shadow: inset 22px 0 44px rgba(0,0,0,0.45), inset 0 0 70px rgba(0,0,0,0.4); }
+#curtains .curtain { transition: transform 1.7s cubic-bezier(.7,0,.2,1); }
+#curtains.open .curtain.left  { transform: translateX(-102%); }
+#curtains.open .curtain.right { transform: translateX(102%); }
+
+/* the pelmet/valance: stays put, sits ABOVE the panels (hides the rail) */
+.valance { position: absolute; top: 0; left: 0; right: 0; height: 14vh; z-index: 4; }
+.valance::before {                       /* the velvet header band */
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 52%;
+  background:
+    linear-gradient(180deg, #7e1414, #4e0808 70%, #3a0606),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.18) 0 16px, transparent 16px 32px);
+  background-blend-mode: multiply, normal;
+  border-bottom: 2px solid rgba(201,150,63,0.5);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+}
+.swags { position: absolute; top: 36%; left: -2%; right: -2%; height: 64%; display: flex; }
+.swag {
+  flex: 1 1 0; margin: 0 -2.4%; height: 100%;
+  background: radial-gradient(125% 150% at 50% -25%, #a52323 0%, #821717 32%, #560a0a 68%, #3a0606 100%);
+  border-bottom-left-radius: 50% 86%; border-bottom-right-radius: 50% 86%;
+  box-shadow: inset 0 -12px 20px rgba(0,0,0,0.45), inset 0 10px 14px rgba(255,220,170,0.08);
+  border-bottom: 2px solid rgba(201,150,63,0.45);
+}
+.tassels { position: absolute; top: 0; left: 0; right: 0; height: 100%; display: flex; justify-content: space-around; pointer-events: none; }
+.tassel { position: relative; width: 0; top: calc(14vh - 6px); }
+.tassel::before {                        /* gold cord */
+  content: ''; position: absolute; left: -1px; top: -8px; width: 2px; height: 14px;
+  background: linear-gradient(#caa44a, #8a6a22);
+}
+.tassel::after {                         /* gold tassel head */
+  content: ''; position: absolute; left: -5px; top: 4px; width: 10px; height: 16px;
+  background: radial-gradient(circle at 50% 25%, #f1d489, #b9892f 70%, #6e4f16);
+  border-radius: 4px 4px 5px 5px; box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+}
 
 /* =============================================================================
    PRE-SHOW (spoken in front of the CLOSED curtain — sits ABOVE the curtains)
@@ -129,10 +162,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   animation: float 3.4s ease-in-out infinite; transition: opacity 0.8s ease, transform 0.8s ease;
 }
 .opening-wand.hidden { opacity: 0; transform: scale(0.4); pointer-events: none; }
-@keyframes float { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-12px) rotate(4deg); } }
-.wand-svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 14px var(--accent)); }
-.wand-star { transform-origin: 60px 30px; animation: twinkle 2.2s ease-in-out infinite; }
-@keyframes twinkle { 0%,100% { opacity: 0.85; transform: scale(0.9) rotate(0); } 50% { opacity: 1; transform: scale(1.18) rotate(40deg); } }
+@keyframes float { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10px) rotate(3deg); } }
+
+/* the wand itself — crisp gold, a refined glow (NOT a torch beam) */
+.wand-svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 1px 5px rgba(201,150,63,0.55)); }
+.wand-star { transform-origin: 64px 33px; animation: twinkle 2.6s ease-in-out infinite; }
+@keyframes twinkle { 0%,100% { opacity: 0.9; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.12); } }
+.wand-mini { transform-box: fill-box; transform-origin: center; animation: miniTwinkle 2.2s ease-in-out infinite; }
+.wand-mini.m2 { animation-delay: 0.5s; } .wand-mini.m3 { animation-delay: 1s; }
+@keyframes miniTwinkle { 0%,100% { opacity: 0.25; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1.1); } }
 .wand-hint {
   display: block; font-family: var(--film-serif); font-size: 0.6rem; letter-spacing: 0.34em;
   color: var(--ink-soft); margin-top: 0.4rem; text-indent: 0.34em; opacity: 0.8;
@@ -230,30 +268,30 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
    ========================================================================== */
 #hud { position: absolute; inset: 0; z-index: 40; pointer-events: none; opacity: 0; transition: opacity 0.8s; }
 #hud.visible { opacity: 1; }
+/* the two navigation wands live in the BOTTOM CORNERS, no chrome — just the wand */
 .nav-wand {
-  pointer-events: auto; position: absolute; top: 50%; transform: translateY(-50%);
-  width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center;
-  background: radial-gradient(circle at 40% 35%, rgba(255,255,255,0.12), rgba(0,0,0,0.35));
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  box-shadow: 0 0 0 0 var(--accent); transition: box-shadow 0.4s, transform 0.3s, opacity 0.4s;
-  backdrop-filter: blur(2px);
+  pointer-events: auto; position: absolute; bottom: 3vh;
+  width: 64px; height: 80px; padding: 6px; background: none; border: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px;
+  transition: transform 0.25s ease, opacity 0.5s ease; transform: translateY(0);
 }
-.nav-wand { flex-direction: column; gap: 2px; color: var(--accent); }
-.navwand-svg { width: 30px; height: 30px; overflow: visible; filter: drop-shadow(0 0 6px var(--accent)); }
-.nav-wand .nw-star { transform-origin: 33px 16px; animation: twinkle 2.4s ease-in-out infinite; }
+.nav-wand .wand-svg { width: 46px; height: 46px; }
+.nav-wand.prev { left: 8px; } .nav-wand.next { right: 8px; }
+.nav-wand.prev .wand-svg { transform: scaleX(-1); }     /* mirror so it points to the left */
 .nav-wand .wand-cue {
-  font-family: var(--film-serif); font-size: 0.42rem; letter-spacing: 0.22em; text-indent: 0.22em;
-  color: var(--ink-soft); text-transform: uppercase;
+  font-family: var(--film-serif); font-size: 0.44rem; letter-spacing: 0.24em; text-indent: 0.24em;
+  color: var(--ink-soft); text-transform: uppercase; transition: color 0.3s;
 }
-.nav-wand.prev { left: 14px; } .nav-wand.next { right: 14px; }
-.nav-wand.prev .navwand-svg { transform: scaleX(-1); }   /* wand points the other way */
-.nav-wand:active { transform: translateY(-50%) scale(0.88); }
-.nav-wand.hidden { opacity: 0; pointer-events: none; }
-.nav-wand.ready { animation: wandReady 1.8s ease-in-out infinite; }
-@keyframes wandReady {
-  0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); transform: translateY(-50%) scale(1); }
-  50% { box-shadow: 0 0 24px 6px color-mix(in srgb, var(--accent) 50%, transparent); transform: translateY(-50%) scale(1.08); }
-}
+.nav-wand:active { transform: translateY(2px) scale(0.92); }
+.nav-wand.hidden { opacity: 0; pointer-events: none; transform: translateY(12px); }
+.nav-wand.ready .wand-cue { color: var(--accent); }
+.nav-wand.ready { animation: wandBob 2.2s ease-in-out infinite; }
+@keyframes wandBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+/* tap flare: a quick pop of the wand + sparkle handled in JS */
+.nav-wand.tapped .wand-tip { animation: tipFlare 0.55s ease; }
+@keyframes tipFlare { 0% { transform: scale(1); } 35% { transform: scale(1.5); filter: drop-shadow(0 0 8px var(--accent)); } 100% { transform: scale(1); } }
+.nav-wand.tapped { animation: tapPress 0.4s ease; }
+@keyframes tapPress { 0%,100% { transform: translateY(0) scale(1); } 30% { transform: translateY(2px) scale(0.9); } }
 .progress {
   pointer-events: none; position: absolute; bottom: 5vh; left: 50%; transform: translateX(-50%);
   font-family: var(--film-serif); font-size: 0.64rem; letter-spacing: 0.28em; text-indent: 0.28em;
@@ -266,7 +304,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .progress.milestone .p-dot { box-shadow: 0 0 12px var(--accent); animation: nar 1.4s ease-in-out infinite; }
 
 /* top controls */
-.top-controls { position: absolute; top: 14px; right: 14px; z-index: 45; display: flex; gap: 8px; }
+.top-controls { position: absolute; top: 14px; right: 14px; z-index: 56; display: flex; gap: 8px; }
+.nav-wand .wand-tip { transform-box: fill-box; transform-origin: center; }
 .top-controls button {
   width: 38px; height: 38px; border-radius: 50%; font-size: 0.95rem;
   background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); color: var(--ink-soft);
@@ -345,7 +384,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* =============================================================================
    WISHES WALL
    ========================================================================== */
-.wishes-scene { position: absolute; inset: 0; z-index: 20; overflow-y: auto; padding: 64px 18px 90px; -webkit-overflow-scrolling: touch; }
+/* top padding clears the pelmet/valance so the heading is never under the curtain */
+.wishes-scene { position: absolute; inset: 0; z-index: 20; overflow-y: auto; padding: calc(14vh + 30px) 18px 90px; -webkit-overflow-scrolling: touch; }
 .wishes-title { text-align: center; font-style: italic; font-weight: 500; font-size: clamp(1.5rem, 6vw, 2.2rem); margin-bottom: 1.2rem; }
 .wish-form { max-width: 440px; margin: 0 auto 2rem; display: grid; gap: 10px; }
 .wish-form input, .wish-form textarea {

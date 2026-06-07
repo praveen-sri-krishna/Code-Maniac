@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#1a0606" />
-  <title>Silver Jubilee — Magic Show: From Retro to Now</title>
+  <title>Silver Jubilee · A Magic Show</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,25 +19,27 @@
 
     <!-- Red velvet curtains -->
     <div id="curtains" class="open">
-      <div class="valance"></div>
       <div class="curtain left"></div>
       <div class="curtain right"></div>
+      <!-- premium pelmet/valance: draped swags + gold fringe, sits above the panels -->
+      <div class="valance">
+        <div class="swags">
+          <span class="swag"></span><span class="swag"></span><span class="swag"></span>
+          <span class="swag"></span><span class="swag"></span><span class="swag"></span>
+        </div>
+        <div class="tassels">
+          <span class="tassel"></span><span class="tassel"></span><span class="tassel"></span>
+          <span class="tassel"></span><span class="tassel"></span>
+        </div>
+      </div>
     </div>
 
     <!-- Heads-up display: the wands + the progress indicator -->
     <div id="hud">
-      <button id="wand-prev" class="wand nav-wand prev hidden" aria-label="Travel back a year">
-        <svg viewBox="0 0 44 44" class="navwand-svg" aria-hidden="true">
-          <line x1="10" y1="34" x2="29" y2="15" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
-          <path class="nw-star" d="M33 7 l2.2 5.4 5.8 .9 -4.4 4 1.1 5.7 -5.7-3.2 -5.6 3.2 1.1-5.7 -4.4-4 5.8-.9z" fill="currentColor"/>
-        </svg>
+      <button id="wand-prev" class="nav-wand prev hidden" aria-label="Travel back a year">
         <span class="wand-cue">back</span>
       </button>
-      <button id="wand-next" class="wand nav-wand next hidden" aria-label="Travel forward a year">
-        <svg viewBox="0 0 44 44" class="navwand-svg" aria-hidden="true">
-          <line x1="10" y1="34" x2="29" y2="15" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
-          <path class="nw-star" d="M33 7 l2.2 5.4 5.8 .9 -4.4 4 1.1 5.7 -5.7-3.2 -5.6 3.2 1.1-5.7 -4.4-4 5.8-.9z" fill="currentColor"/>
-        </svg>
+      <button id="wand-next" class="nav-wand next hidden" aria-label="Travel forward a year">
         <span class="wand-cue">next</span>
       </button>
       <div id="progress" class="progress"></div>

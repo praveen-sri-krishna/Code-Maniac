@@ -76,7 +76,7 @@ const PROLOGUE = [
     kind: 'prologue', year: 1974, label: '1974', title: 'Sathish Born',
     mood: 'Pure B&W · film grain', milestone: true,
     headline: 'A Star Is Born',
-    subhead: 'Not just the star of our show — a real one, born to do wonders.',
+    subhead: 'Not just the star of our show. A real one, born to do wonders.',
     trick: 'starbirth',
     narration: 'Our story begins long before you knew us…',
     photos: [
@@ -102,9 +102,9 @@ const PROLOGUE = [
    trick ∈ starbirth | twinstars | union | hat | sparkleburst                  */
 const ACTS = {
   2001: { h: 'Two Stars Collide',           s: 'And the real magic begins.',                 trick: 'union' },
-  2002: { h: 'For Our Next Trick…',         s: 'From an empty hat — a brand-new wonder appears.', trick: 'hat' },
+  2002: { h: 'For Our Next Trick…',         s: 'From an empty hat, a brand new wonder appears.', trick: 'hat' },
   2007: { h: 'Abracadabra… Once More!',     s: 'The greatest trick of all: one more.',        trick: 'hat' },
-  2011: { h: 'Ten Years of Magic',          s: 'A whole decade — and the spell holds strong.', trick: 'sparkleburst' },
+  2011: { h: 'Ten Years of Magic',          s: 'A whole decade, and the spell holds strong.', trick: 'sparkleburst' },
   2014: { h: 'A Home, Conjured from Dreams', s: 'Four walls, built entirely of love.',         trick: 'sparkleburst' },
   2021: { h: 'Two Decades, Still Spellbound', s: 'Twenty years, and the trick never gets old.', trick: 'sparkleburst' },
   2025: { h: 'The Grand Finale Nears…',     s: 'One last sunrise before the reveal.',          trick: 'sparkleburst' },
@@ -191,7 +191,7 @@ const CHAPTERS = COLOUR_BASE.map((c, i) => {
     headline: act ? act.h : c.title,   // the showman's line for special years
     subhead: act ? act.s : null,
     trick: act ? act.trick : null,     // visual magic set-piece, if any
-    narration: `${c.title}${c.tag ? ' — ' + c.tag : ''}`,
+    narration: `${c.title}${c.tag ? ': ' + c.tag : ''}`,
     palette: paletteForColourChapter(i),
     photos,
   };
@@ -211,7 +211,7 @@ const COPY = {
   wandCue: 'tap the wand to begin',
   finaleTitle: '25 Years & Counting…',
   finaleSub: '೨೫ ವರ್ಷಗಳ ಪ್ರೀತಿ',
-  finaleWish: 'To Preethi & Sathi — thank you for showing us what forever looks like.\nHappy Silver Jubilee. With all our love, Preru & Sammu.',
+  finaleWish: 'To Preethi & Sathi, thank you for showing us what forever looks like.\nHappy Silver Jubilee. With all our love, Preru & Sammu.',
 };
 
 window.SJ_DATA = { SCENES, COPY, paletteForColourChapter, PROLOGUE_PALETTE };
