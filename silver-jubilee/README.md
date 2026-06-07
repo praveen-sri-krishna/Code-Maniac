@@ -44,31 +44,20 @@ See **`DESIGN.md`** for the full brand contract (palette, type, motion, voice, a
 
 ---
 
-## 🖼 Adding real content later (this is the whole point)
+## 🖼 Adding the photos (no code editing)
 
-**You only ever edit `js/data.js`.** Everything is data-driven.
+**See [`PHOTOS.md`](PHOTOS.md) for the full guide.** In short — **drop, caption, run:**
 
-### Photos
-Each photo points at a file in `media/<year>/`. Until the file exists, a tasteful
-vintage "undeveloped film" placeholder shows with the caption. Drop the real file
-in and it simply appears — no code change.
+1. Drop each photo into its year folder (`media/2001/01.jpg`, `02.jpg`, …). The
+   folder is the year; the number is the on-screen order.
+2. Run `npm run media` — resizes big photos to web size and rebuilds the show
+   (`media/manifest.json`), and lists every photo in `media/captions.csv`.
+3. Fill the **Caption** column in `media/captions.csv`, then `npm run manifest`.
 
-```
-media/2001/01.jpg     media/2001/02.jpg     media/2001/03.jpg
-media/2007/01.jpg     ...
-media/1974/01.jpg     (prologue)
-```
-
-To change a caption, the number of photos, or the entrance animation for a year,
-edit that chapter's entry in `js/data.js`:
-
-```js
-photos: [
-  photo(2001, 1, 'Two hearts, one mandap.', 'kenburns'),
-  photo(2001, 2, 'The day everything changed.', 'polaroid'),
-  // anim ∈ polaroid | kenburns | popup | zoom | collage
-]
-```
+Years you haven't filled yet keep their vintage "undeveloped film" placeholders,
+so the show is always complete while you work through 25 years at your own pace.
+A photo's entrance animation (Polaroid drop / Ken Burns / pop / zoom / collage)
+is assigned automatically; ask if you want a specific one pinned.
 
 ### The gift-box video
 Drop your compiled family video at **`media/finale/family.mp4`**. Until then a
@@ -77,8 +66,7 @@ labelled placeholder shows in the frame.
 ### Narration & music (production)
 The prototype uses synthesised sound effects (Web Audio) so the magic is audible.
 For the real thing, load files with **Howler.js** — one narration track and one
-era song per chapter. Add the file paths to each chapter in `data.js` and play
-them from `renderScene()`. Recommended: narration louder, music underneath.
+era song per chapter, played from `renderScene()`. Narration louder, music under.
 
 ### Colours
 The B&W → gold journey is controlled by `PALETTE_STOPS` in `data.js`. Nudge a

@@ -214,4 +214,23 @@ const COPY = {
   finaleWish: 'To Preethi & Sathi, thank you for showing us what forever looks like.\nHappy Silver Jubilee. With all our love, Preru & Sammu.',
 };
 
-window.SJ_DATA = { SCENES, COPY, paletteForColourChapter, PROLOGUE_PALETTE };
+/* ---- apply a generated photo manifest -------------------------------------
+   media/manifest.json (built by tools/build-manifest.mjs) looks like:
+     { "2001": [ { "file": "01.jpg", "caption": "…" }, … ], … }
+   For any year that has real photos, replace the placeholder slots with them.
+   Years not in the manifest keep their vintage placeholders, so the show is
+   always complete while content is still being added.                         */
+function applyManifest(manifest) {
+  if (!manifest) return;
+  SCENES.forEach(scene => {
+    const list = manifest[String(scene.year)];
+    if (!Array.isArray(list) || !list.length) return;
+    scene.photos = list.map((p, i) => ({
+      src: `media/${scene.year}/${p.file}`,
+      caption: p.caption || '',
+      anim: p.anim || ANIM_CYCLE[(scene.year + i) % ANIM_CYCLE.length],
+    }));
+  });
+}
+
+window.SJ_DATA = { SCENES, COPY, paletteForColourChapter, PROLOGUE_PALETTE, applyManifest };

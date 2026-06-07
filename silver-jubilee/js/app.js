@@ -655,6 +655,12 @@
   /* ---- boot --------------------------------------------------------------- */
   wandPrev.insertAdjacentHTML('afterbegin', wandSVG());   // same wand in both corners
   wandNext.insertAdjacentHTML('afterbegin', wandSVG());
-  buildOpening();
   buildDirector();
+  // load real photos if a manifest exists (served over http); otherwise the
+  // vintage placeholders stand in. file:// has no fetch, so it falls back too.
+  fetch('media/manifest.json', { cache: 'no-store' })
+    .then(r => (r.ok ? r.json() : null))
+    .then(m => { try { SJ_DATA.applyManifest(m); } catch (e) {} })
+    .catch(() => {})
+    .finally(buildOpening);
 })();
