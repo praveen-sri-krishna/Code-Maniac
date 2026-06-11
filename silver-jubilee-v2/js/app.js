@@ -24,6 +24,7 @@
   let timers = [];              // scene timers (cleared on every scene change)
   let fxTimers = [];            // transition timers (NOT cleared by scene changes)
   let renderToken = 0;          // invalidates async work when scene changes
+  let sheetOpen = false;        // a memory sheet is open → the show holds its breath
 
   /* ---- MOTION as data (single source of truth for timing — see DESIGN.md) -- */
   const MOTION = {
@@ -151,9 +152,11 @@
     clearTimers();
     A.ambient(true);
 
+    if (scene.kind === 'duet') { renderDuet(scene, token); return; }
+
     const isPro = scene.kind === 'prologue';
     sceneLayer.innerHTML = `
-      <div class="chapter ${isPro ? 'is-prologue' : ''} ${scene.milestone ? 'is-milestone' : ''}">
+      <div class="chapter ${isPro ? 'is-prologue' : ''} ${scene.milestone ? 'is-milestone' : ''} ${scene.kind === 'teaser' ? 'is-teaser' : ''}">
         <div class="grain"></div>
         <div class="vignette"></div>
 
@@ -180,6 +183,16 @@
     setWandSparkle(scene.palette.accent);
     armChapterReady(false);
 
+    // the 2026 teaser is a single held card: the title stays put and the
+    // wand simply returns — only tapping it brings up the gift box
+    if (scene.kind === 'teaser') {
+      after(MOTION.titleHold, () => {
+        if (token !== renderToken) return;
+        armChapterReady(true);
+      });
+      return;
+    }
+
     // title card holds, then — for special years — the magic trick plays,
     // and only after the trick do the photos begin. The stage is cleared of
     // chrome from this point on: the show has the room to itself.
@@ -191,6 +204,87 @@
       if (scene.trick) playTrick(scene, token, () => playPhotos(scene, token));
       else playPhotos(scene, token);
     });
+  }
+
+  /* =========================================================================
+     THE DUET — split stage: his side and her side, each quickly cycling
+     photos of their younger selves before the wedding chapter begins.
+     ====================================================================== */
+  const DUET_MS = 1500;          // quick cycle, as the brief asks
+  function renderDuet(scene, token) {
+    sceneLayer.innerHTML = `
+      <div class="chapter duet is-milestone">
+        <div class="grain"></div>
+        <div class="vignette"></div>
+
+        <div class="title-card" id="title-card">
+          <div class="tc-rule"></div>
+          <div class="tc-year">${scene.label}</div>
+          <div class="tc-title">${scene.title}</div>
+          ${scene.tag ? `<div class="tc-tag">✦ ${scene.tag} ✦</div>` : ''}
+          <div class="tc-rule"></div>
+        </div>
+
+        <div class="duet-stage">
+          <div class="duet-half">
+            <div class="duet-window" id="duet-him"></div>
+            <div class="duet-name">${scene.him.name}</div>
+          </div>
+          <div class="duet-spark">✦</div>
+          <div class="duet-half">
+            <div class="duet-window" id="duet-her"></div>
+            <div class="duet-name">${scene.her.name}</div>
+          </div>
+        </div>
+
+        <div class="ready-cue" id="ready-cue">✦&ensp;${COPY.readyCue}&ensp;✦</div>
+
+        <div class="narration" id="narration">
+          <span class="nar-dot"></span>
+          <span class="nar-text">${scene.narration}</span>
+        </div>
+      </div>`;
+
+    updateHUD(scene);
+    setWandSparkle(scene.palette.accent);
+    armChapterReady(false);
+
+    after(MOTION.titleHold, () => {
+      if (token !== renderToken) return;
+      const tc = $('#title-card');
+      if (tc) tc.classList.add('lift');
+      setChrome('hidden');
+      runDuetSide('#duet-him', scene.him.photos, scene, token, 0);
+      runDuetSide('#duet-her', scene.her.photos, scene, token, DUET_MS / 2);
+      // one full pass through the longer side, then the wand returns —
+      // the halves keep cycling underneath until the guest travels on
+      const passes = Math.max(scene.him.photos.length, scene.her.photos.length);
+      after(DUET_MS * passes + 600, () => {
+        if (token === renderToken) armChapterReady(true);
+      });
+    });
+  }
+
+  /* each half cycles its photos on a loop (offset so the sides alternate) */
+  function runDuetSide(sel, photos, scene, token, offset) {
+    if (!photos.length) return;
+    let k = 0;
+    const tick = () => {
+      if (token !== renderToken) return;
+      if (sheetOpen) { after(300, tick); return; }      // a memory is being written
+      const win = $(sel);
+      if (!win) return;
+      const prev = win.querySelector('.photo-frame:not(.leave)');
+      const frame = makePhotoFrame(photos[k % photos.length], scene);
+      frame.classList.add('duet-frame');
+      win.appendChild(frame);
+      void frame.offsetWidth;
+      frame.classList.add('enter');
+      if (prev) { prev.classList.add('leave'); after(520, () => prev.remove()); }
+      k++;
+      after(DUET_MS, tick);
+    };
+    after(offset, tick);
   }
 
   /* ---- the magic act: a visual trick + the showman's headline ------------- */
@@ -262,6 +356,7 @@
     let p = 0;
     const showNext = () => {
       if (token !== renderToken || !win) return;
+      if (sheetOpen) { after(300, showNext); return; }   // hold this photo while a memory is written
       if (p >= scene.photos.length) { armChapterReady(true); return; }
       const ph = scene.photos[p];
 
@@ -318,7 +413,91 @@
     cap.textContent = ph.caption;
     frame.appendChild(img);
     frame.appendChild(cap);
+
+    // the memory badge: a quiet corner button. Shows a count when this photo
+    // already carries memories; opens the sheet to read them or add one.
+    frame.dataset.src = ph.src;
+    const badge = document.createElement('button');
+    badge.className = 'memo-badge';
+    badge.setAttribute('aria-label', 'Memories on this photo');
+    badge.innerHTML = `<span class="memo-ic">✎</span><span class="memo-count"></span>`;
+    badge.addEventListener('click', e => { e.stopPropagation(); openMemoSheet(ph); });
+    frame.appendChild(badge);
+    refreshMemoBadge(frame, ph.src);
     return frame;
+  }
+
+  /* =========================================================================
+     MEMORIES ON PHOTOS — guests pin their own memory to any photo.
+     Out of the way by design: a small ✎ badge with a count; tapping it holds
+     the show and slides up a sheet with the memories and a form.
+     (Prototype storage: localStorage. PROD: same Supabase table pattern as
+     the wishes wall — see README.)
+     ====================================================================== */
+  const memoStore = () => JSON.parse(localStorage.getItem('sj_memos') || '{}');
+  const memosFor = src => memoStore()[src] || [];
+  function addMemo(src, m) {
+    const s = memoStore();
+    (s[src] = s[src] || []).unshift(m);
+    localStorage.setItem('sj_memos', JSON.stringify(s));
+  }
+  function refreshMemoBadge(frame, src) {
+    const n = memosFor(src).length;
+    const c = frame.querySelector('.memo-count');
+    if (c) c.textContent = n || '';
+    frame.classList.toggle('has-memos', n > 0);
+  }
+
+  function openMemoSheet(ph) {
+    if (sheetOpen) return;
+    sheetOpen = true;
+    const sheet = document.createElement('div');
+    sheet.className = 'memo-sheet';
+    sheet.innerHTML = `
+      <div class="ms-card">
+        <button class="ms-close" aria-label="Close">✕</button>
+        <p class="ms-title">✎ &nbsp;Memories on this photo</p>
+        <p class="ms-cap">“${escapeHtml(ph.caption)}”</p>
+        <div class="ms-list" id="ms-list"></div>
+        <form class="ms-form" id="ms-form" autocomplete="off">
+          <input class="ms-name" maxlength="40" placeholder="Your name" required />
+          <textarea class="ms-msg" maxlength="200" placeholder="What does this photo bring back?" required></textarea>
+          <button type="submit">Pin this memory ✦</button>
+        </form>
+      </div>`;
+    document.body.appendChild(sheet);
+    requestAnimationFrame(() => sheet.classList.add('open'));
+
+    const list = sheet.querySelector('#ms-list');
+    const renderList = () => {
+      const ms = memosFor(ph.src);
+      list.innerHTML = ms.length
+        ? ms.map(m => `<div class="ms-note"><p class="wn-msg">${escapeHtml(m.msg)}</p><p class="wn-name">${escapeHtml(m.name)}</p></div>`).join('')
+        : `<p class="ms-empty">No memories pinned yet — be the first ✦</p>`;
+    };
+    renderList();
+
+    const close = () => {
+      sheet.classList.remove('open');
+      setTimeout(() => sheet.remove(), 450);
+      sheetOpen = false;
+      // bring any badge for this photo up to date
+      document.querySelectorAll(`.photo-frame[data-src="${CSS.escape(ph.src)}"]`)
+        .forEach(f => refreshMemoBadge(f, ph.src));
+    };
+    sheet.querySelector('.ms-close').addEventListener('click', close);
+    sheet.addEventListener('click', e => { if (e.target === sheet) close(); });
+
+    sheet.querySelector('#ms-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const name = sheet.querySelector('.ms-name').value.trim();
+      const msg = sheet.querySelector('.ms-msg').value.trim();
+      if (!name || !msg) return;
+      addMemo(ph.src, { name, msg });
+      A.whoosh();
+      renderList();
+      e.target.reset();
+    });
   }
 
   /* mark the chapter as finished → the wands return with a sparkle + bell */
@@ -373,8 +552,8 @@
     const milestone = scene.milestone ? ' milestone' : '';
     progress.className = 'progress' + milestone;
     progress.innerHTML = scene.kind === 'prologue'
-      ? `<span class="p-dot"></span> Prologue · ${scene.year}`
-      : `<span class="p-dot"></span> ${scene.label}`;
+      ? `<span class="p-dot"></span> ${scene.year}`
+      : `<span class="p-dot"></span> ${scene.label}`;   // just the year, no "x of 25"
     wandPrev.classList.remove('hidden');
     wandNext.classList.remove('hidden');
     setChrome('title');                 // only the year pill greets the chapter
@@ -388,7 +567,7 @@
      NAVIGATION (the wands are the only way forward/back)
      ====================================================================== */
   function go(dir) {
-    if (busy) return;
+    if (busy || sheetOpen) return;
     if (phase === 'story') {
       const target = sceneIdx + dir;
       if (target < 0) return;
@@ -731,7 +910,8 @@
     // jumping past the opening means the curtain must already be raised
     const raise = () => curtains.classList.add('open');
     add('Opening', () => { phase = 'curtain'; buildOpening(); });
-    SCENES.forEach((s, i) => add(s.kind === 'prologue' ? s.year : `Ch${s.chapterNo}·${s.year}`, () => { raise(); phase = 'story'; sceneIdx = i; busy = false; A.unlock(); renderScene(i); }));
+    const dirLabel = s => s.kind === 'chapter' ? `Ch${s.chapterNo}·${s.year}` : s.kind === 'duet' ? 'Duet' : s.year;
+    SCENES.forEach((s, i) => add(dirLabel(s), () => { raise(); phase = 'story'; sceneIdx = i; busy = false; A.unlock(); renderScene(i); }));
     add('Gift Box', () => { raise(); busy = false; A.unlock(); enterGift(); });
     add('Wishes', () => { raise(); busy = false; A.unlock(); enterWishes(); });
     add('Finale', () => { raise(); busy = false; A.unlock(); enterFinale(); });

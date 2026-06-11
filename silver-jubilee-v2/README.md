@@ -20,6 +20,18 @@ wishes wall, and a confetti finale.
   are within a year.
 - **The stage breathes**: golden dust motes drift through the spotlight,
   tinted live by each year's palette.
+- **The Duet** — a split-screen interlude after both stars are introduced and
+  before the wedding: each half quickly cycles photos of their younger selves
+  (drop up to 4 photos each into `media/before-him/` and `media/before-her/`).
+- **A 2026 teaser card** after the 25th year — only tapping the wand there
+  brings up the gift box and the family video.
+- **Memories on photos** — every photo carries a quiet ✎ badge; tapping it
+  holds the show and slides up a sheet where guests read pinned memories or
+  add their own. A count chip shows when a photo already has memories.
+  (Prototype storage: localStorage; production uses the same Supabase pattern
+  as the wishes wall.)
+- The progress pill shows just the year (`2004`), and the finale wish is
+  addressed to Appa & Amma.
 
 > This is the **working prototype**. The theme, the usage/flow, and the
 > transitions are all built and tunable. Real photos, video, narration and music

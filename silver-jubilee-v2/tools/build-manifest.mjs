@@ -16,7 +16,7 @@ const CSV   = join(MEDIA, 'captions.csv');
 const OUT   = join(MEDIA, 'manifest.json');
 const IMG   = /\.(jpe?g|png|webp|gif)$/i;
 
-const isYear = (d) => /^\d{4}$/.test(d);
+const isYear = (d) => /^\d{4}$/.test(d) || d === 'before-him' || d === 'before-her';
 const nat = (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 
 /* ---- tiny CSV helpers (caption may be quoted to allow commas) ------------- */

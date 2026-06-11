@@ -87,7 +87,7 @@ const PROLOGUE = [
   {
     kind: 'prologue', year: 1982, label: '1982', title: 'Preethi Born',
     mood: 'B&W · softer grain', milestone: true,
-    headline: 'Enter the Second Star',
+    headline: 'Enter Another Star',
     subhead: 'Somewhere across the sky, the perfect match was lit.',
     trick: 'twinstars',
     narration: 'And somewhere, not far away, she arrived too.',
@@ -97,6 +97,41 @@ const PROLOGUE = [
     ],
   },
 ];
+
+/* =============================================================================
+   THE DUET — a split-screen interlude after both stars are introduced and
+   right before the wedding: two halves of the stage, each quickly cycling
+   photos of their younger selves, two lives drifting toward each other.
+   Drop photos into media/before-him/ and media/before-her/ (up to 4 each).
+   ========================================================================== */
+const duetSlot = (side, n, caption) =>
+  ({ src: `media/before-${side}/${String(n).padStart(2, '0')}.jpg`, caption, anim: 'duet' });
+
+const DUET = {
+  kind: 'duet', year: 2000, label: 'Before they met', title: 'Two Stars, Two Worlds',
+  milestone: true, tag: 'The Years Before',
+  narration: 'Two lives, growing up worlds apart… drifting toward each other.',
+  palette: { bg1: '#1c1216', bg2: '#43282e', accent: '#e0b08a', sepia: 0.55, sat: 0.55, grayscale: 0 },
+  him: {
+    name: 'Sathish',
+    photos: [
+      duetSlot('him', 1, 'Little Sathish'),
+      duetSlot('him', 2, 'Growing up'),
+      duetSlot('him', 3, 'Almost there'),
+      duetSlot('him', 4, 'On his way'),
+    ],
+  },
+  her: {
+    name: 'Preethi',
+    photos: [
+      duetSlot('her', 1, 'Little Preethi'),
+      duetSlot('her', 2, 'Growing up'),
+      duetSlot('her', 3, 'Almost there'),
+      duetSlot('her', 4, 'On her way'),
+    ],
+  },
+  photos: [],            // the standard player is bypassed for this scene
+};
 
 /* The magic act — special years get a showman's headline + a visual trick.
    trick ∈ starbirth | twinstars | union | hat | sparkleburst                  */
@@ -183,7 +218,7 @@ const CHAPTERS = COLOUR_BASE.map((c, i) => {
     index: i,                       // 0-based colour-chapter index
     chapterNo: i + 1,               // 1..25
     year: c.year,
-    label: `Year ${i + 1} of 25 · ${c.year}`,
+    label: String(c.year),
     title: c.title,
     tag: c.tag || null,
     milestone: !!c.milestone,
@@ -197,8 +232,20 @@ const CHAPTERS = COLOUR_BASE.map((c, i) => {
   };
 });
 
+/* =============================================================================
+   2026 — THE TEASER. After the 25th year, one more card appears: the story
+   isn't over. Only tapping the wand here brings up the gift box reveal.
+   ========================================================================== */
+const TEASER = {
+  kind: 'teaser', year: 2026, label: '2026', title: 'The Next Chapter',
+  milestone: true, tag: 'To Be Continued',
+  narration: 'Every great show saves its finest act for the very end…',
+  palette: { bg1: '#241405', bg2: '#6b3e12', accent: '#ffd24a', sepia: 0, sat: 1.3, grayscale: 0 },
+  photos: [],
+};
+
 /* full ordered scene list the engine plays through */
-const SCENES = [...PROLOGUE.map(p => ({ ...p, palette: PROLOGUE_PALETTE })), ...CHAPTERS];
+const SCENES = [...PROLOGUE.map(p => ({ ...p, palette: PROLOGUE_PALETTE })), DUET, ...CHAPTERS, TEASER];
 
 /* opening + finale copy */
 const COPY = {
@@ -217,7 +264,7 @@ const COPY = {
   wandCue: 'tap the wand to begin',
   finaleTitle: '25 Years & Counting…',
   finaleSub: '೨೫ ವರ್ಷಗಳ ಪ್ರೀತಿ',
-  finaleWish: 'To Preethi & Sathi, thank you for showing us what forever looks like.\nHappy Silver Jubilee. With all our love, Preru & Sammu.',
+  finaleWish: 'To Appa & Amma, thank you for showing us what forever looks like.\nHappy Silver Jubilee. With all our love, Preru & Sammu.',
 };
 
 /* ---- apply a generated photo manifest -------------------------------------
@@ -229,6 +276,19 @@ const COPY = {
 function applyManifest(manifest) {
   if (!manifest) return;
   SCENES.forEach(scene => {
+    if (scene.kind === 'duet') {
+      // the duet pulls from media/before-him/ and media/before-her/
+      [['him', 'before-him'], ['her', 'before-her']].forEach(([side, key]) => {
+        const list = manifest[key];
+        if (!Array.isArray(list) || !list.length) return;
+        scene[side].photos = list.slice(0, 4).map(p => ({
+          src: `media/${key}/${p.file}`,
+          caption: p.caption || '',
+          anim: 'duet',
+        }));
+      });
+      return;
+    }
     const list = manifest[String(scene.year)];
     if (!Array.isArray(list) || !list.length) return;
     scene.photos = list.map((p, i) => ({

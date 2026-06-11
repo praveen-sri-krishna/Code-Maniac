@@ -274,7 +274,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .tc-year { font-family: var(--film-serif); font-size: 0.8rem; letter-spacing: 0.5em; color: var(--gold); text-indent: 0.5em; }
 .tc-title { font-family: var(--body-serif); font-style: italic; font-weight: 500; font-size: clamp(2rem, 9vw, 3rem); margin: 0.3rem 0; }
 .tc-tag { font-family: var(--film-serif); font-size: 0.62rem; letter-spacing: 0.34em; color: var(--ink-soft); text-indent: 0.34em; }
-.is-milestone .tc-title { text-shadow: 0 0 26px var(--accent); }
+.is-milestone .tc-title { animation: titleGlow 3.6s ease-in-out infinite; }
+@keyframes titleGlow {
+  0%,100% { text-shadow: 0 0 18px var(--accent); }
+  50% { text-shadow: 0 0 34px var(--accent), 0 0 64px color-mix(in srgb, var(--accent) 40%, transparent); }
+}
+/* the 2026 teaser: the card stays on stage, its tag slowly beckoning */
+.is-teaser .tc-tag { color: var(--accent); animation: pulseHint 2.6s 1s ease-in-out infinite; }
+.is-teaser .tc-year { font-size: 1rem; }
 
 .reel-window { position: absolute; inset: 0; display: grid; place-items: center; z-index: 7; }
 .reel-window > * { grid-area: 1 / 1; }   /* frames stack, so photos cross-fade */
@@ -353,6 +360,33 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .collage .photo-frame:nth-child(odd) { transform: translateY(24px) rotate(4deg); }
 .collage .photo-frame figcaption { font-size: 0.9rem; padding: 8px 4px 10px; }
 @keyframes colIn { to { opacity: 1; transform: rotate(-2deg); } }
+
+/* =============================================================================
+   THE DUET — split stage before the wedding: his side · her side
+   ========================================================================== */
+.duet-stage {
+  position: absolute; inset: 0; z-index: 7;
+  display: flex; align-items: center; justify-content: center; gap: 4vw;
+  padding: 0 4vw;
+}
+.duet-half { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 0 1 auto; }
+.duet-window { position: relative; width: min(38vw, 230px); display: grid; place-items: center; }
+.duet-window > .photo-frame { grid-area: 1 / 1; }
+.duet-name {
+  font-family: var(--film-serif); font-size: 0.66rem; letter-spacing: 0.3em;
+  text-indent: 0.3em; color: var(--ink-soft); text-transform: uppercase;
+}
+.duet-spark {
+  align-self: center; color: var(--accent); font-size: 1.3rem;
+  text-shadow: 0 0 14px var(--accent); animation: sparkPulse 1.8s ease-in-out infinite;
+}
+@keyframes sparkPulse { 0%,100% { opacity: 0.35; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.25); } }
+.duet .photo-frame { width: 100%; padding: 8px 8px 0; }
+.duet .photo-frame figcaption { font-size: 0.92rem; padding: 8px 4px 10px; }
+/* the quick duet cycle: a soft, fast cross-fade */
+.anim-duet { opacity: 0; transform: scale(1.06); }
+.anim-duet.enter { transition: opacity 0.5s ease, transform 0.6s ease; opacity: 1; transform: scale(1); }
+.duet .photo-frame.leave { transition: opacity 0.5s ease, transform 0.5s ease; opacity: 0; transform: scale(0.96); }
 
 /* narration indicator */
 .narration {
@@ -538,6 +572,67 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .finale-title { font-family: var(--body-serif); font-style: italic; font-weight: 600; font-size: clamp(2.2rem, 10vw, 4rem); text-shadow: 0 0 40px var(--accent); animation: fadeUp 1.4s ease both; }
 .finale-sub { font-size: 1.3rem; color: var(--ink-soft); margin: 0.4rem 0 1.6rem; animation: fadeUp 1.4s 0.3s ease both; }
 .finale-wish { font-style: italic; font-size: 1.2rem; line-height: 1.5; color: var(--ink); animation: fadeUp 1.6s 0.6s ease both; }
+
+/* =============================================================================
+   MEMORIES ON PHOTOS — quiet ✎ badge + slide-up sheet
+   ========================================================================== */
+.memo-badge {
+  position: absolute; top: 18px; right: 18px; z-index: 4;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(0,0,0,0.42); border: 1px solid rgba(255,255,255,0.18);
+  color: var(--paper); display: grid; place-items: center;
+  opacity: 0.55; transition: opacity 0.3s, transform 0.2s;
+}
+.memo-badge:active { transform: scale(0.9); }
+.photo-frame:hover .memo-badge, .photo-frame.has-memos .memo-badge { opacity: 0.95; }
+.memo-ic { font-size: 0.85rem; line-height: 1; }
+.memo-count {
+  position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px;
+  padding: 0 4px; border-radius: 9px; display: grid; place-items: center;
+  background: var(--accent); color: #1a0f04;
+  font-family: var(--film-serif); font-size: 0.58rem; font-weight: 700;
+}
+.memo-count:empty { display: none; }
+.photo-frame.film .memo-badge { top: 20px; right: 26px; }
+.duet .memo-badge { width: 26px; height: 26px; top: 12px; right: 12px; }
+
+.memo-sheet {
+  position: fixed; inset: 0; z-index: 90; display: grid; align-items: end; justify-items: center;
+  background: rgba(8,4,4,0); transition: background 0.4s ease;
+}
+.memo-sheet.open { background: rgba(8,4,4,0.55); }
+.ms-card {
+  width: min(100vw, 460px); max-height: 76vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  background: var(--paper); color: #2c1d10; border-radius: 14px 14px 0 0;
+  padding: 20px 18px 22px; position: relative;
+  box-shadow: 0 -16px 50px rgba(0,0,0,0.55);
+  transform: translateY(105%); transition: transform 0.45s cubic-bezier(.3,1,.4,1);
+}
+.memo-sheet.open .ms-card { transform: none; }
+.ms-close {
+  position: absolute; top: 10px; right: 10px; width: 32px; height: 32px;
+  border-radius: 50%; background: rgba(0,0,0,0.08); color: #5c4326;
+  display: grid; place-items: center; font-size: 0.85rem;
+}
+.ms-title { font-family: var(--film-serif); font-size: 0.66rem; letter-spacing: 0.26em; color: #8a6a30; text-transform: uppercase; }
+.ms-cap { font-family: var(--body-serif); font-style: italic; font-size: 1.05rem; margin: 6px 0 12px; }
+.ms-list { display: grid; gap: 8px; margin-bottom: 14px; }
+.ms-note { background: rgba(255,255,255,0.55); border: 1px solid rgba(140,105,48,0.25); border-radius: 6px; padding: 10px 12px 8px; }
+.ms-note .wn-msg { font-family: var(--hand); font-size: 1.3rem; line-height: 1.12; }
+.ms-note .wn-name { font-family: var(--body-serif); font-style: italic; font-size: 0.9rem; margin-top: 4px; opacity: 0.7; }
+.ms-empty { font-style: italic; color: #8a6a30; font-size: 0.95rem; }
+.ms-form { display: grid; gap: 8px; }
+.ms-form input, .ms-form textarea {
+  font-family: var(--body-serif); font-size: 1rem; padding: 10px 12px; color: #2c1d10;
+  background: rgba(255,255,255,0.7); border: 1px solid rgba(140,105,48,0.35); border-radius: 6px; outline: none;
+}
+.ms-form input:focus, .ms-form textarea:focus { border-color: #b9892f; }
+.ms-form textarea { min-height: 58px; resize: vertical; }
+.ms-form button {
+  font-family: var(--film-serif); letter-spacing: 0.16em; padding: 11px; border-radius: 6px;
+  background: linear-gradient(160deg, #c9963f, #8a6a22); color: #fff7e6; font-weight: 600;
+}
+@media (min-width: 620px) { .memo-sheet { align-items: center; } .ms-card { border-radius: 14px; } }
 
 /* =============================================================================
    SPARKLES
