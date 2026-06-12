@@ -32,7 +32,7 @@
     travelBig: 2600,   // the big opening sweep back to 1974
     titleHold: 1700,   // how long a chapter title card lingers
     trick:     3200,   // how long a magic set-piece plays
-    photo:     3100,   // how long each photo holds
+    photo:     1300,   // how long each photo holds (auto-flow; tap to pause on one)
   };
   const PHOTO_MS = MOTION.photo;
   const after = (ms, fn) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
@@ -172,6 +172,7 @@
 
         <div class="photo-dots" id="photo-dots"></div>
         <div class="ready-cue" id="ready-cue">✦&ensp;${COPY.readyCue}&ensp;✦</div>
+        <div class="tap-cue" id="tap-cue">✦&ensp;tap to play on&ensp;✦</div>
 
         <div class="narration${scene.trick ? ' hold' : ''}" id="narration">
           <span class="nar-dot"></span>
@@ -331,6 +332,9 @@
     return `<div class="sparkle-burst"></div>`; // sparkleburst
   }
 
+  // the live photo player for the current chapter, so a stage-tap can pause it
+  let photoCtl = null;
+
   function playPhotos(scene, token) {
     const win = $('#reel-window');
     if (!win) return;
@@ -354,10 +358,41 @@
     };
 
     let p = 0;
+    let timer = null;
+    let queued = null;                         // the step held back while paused
+    // controller the stage-tap handler drives: photos auto-flow (~MOTION.photo),
+    // but a tap holds on the memory that struck a nerve; a second tap plays on.
+    const ctl = { active: true, paused: false, done: false };
+    photoCtl = ctl;
+
+    const wait = (ms) => {                      // schedule the next memory, honouring a pause
+      if (token !== renderToken) { ctl.active = false; return; }
+      if (ctl.paused) { queued = showNext; return; }
+      timer = after(ms, showNext);
+    };
+    ctl.pause = () => {
+      if (ctl.paused || !ctl.active || ctl.done) return false;
+      ctl.paused = true;
+      if (timer) { clearTimeout(timer); timer = null; }
+      return true;
+    };
+    ctl.resume = () => {
+      if (!ctl.paused || !ctl.active) return;
+      ctl.paused = false;
+      const fn = queued || showNext;            // a timer was pending, not a queued step
+      queued = null;
+      fn();                                     // advance to the next memory now
+    };
+
     const showNext = () => {
-      if (token !== renderToken || !win) return;
-      if (sheetOpen) { after(300, showNext); return; }   // hold this photo while a memory is written
-      if (p >= scene.photos.length) { armChapterReady(true); return; }
+      if (token !== renderToken || !win) { ctl.active = false; return; }
+      if (sheetOpen) { timer = after(300, showNext); return; } // hold while a memory is written
+      if (p >= scene.photos.length) {
+        ctl.done = true; ctl.active = false;
+        showChapterCollage(scene);          // recap grid of the whole year before moving on
+        armChapterReady(true);
+        return;
+      }
       const ph = scene.photos[p];
 
       if (ph.anim === 'collage') {
@@ -371,7 +406,7 @@
         });
         win.appendChild(grid);
         p = scene.photos.length;        // collage shows the whole set at once
-        after(PHOTO_MS + 700, showNext);
+        wait(PHOTO_MS + 700);
         return;
       }
 
@@ -390,9 +425,37 @@
       }
       markDot(p);
       p++;
-      after(PHOTO_MS, showNext);
+      wait(PHOTO_MS);
     };
     showNext();
+  }
+
+  /* a recap grid of every photo in the year — shown when the chapter's photos
+     finish, so guests can take them all in again before tapping the wand on.
+     Consistent across every chapter. */
+  function showChapterCollage(scene) {
+    const win = $('#reel-window');
+    if (!win || !scene.photos || scene.photos.length < 2) return;
+    const grid = document.createElement('div');
+    grid.className = 'chapter-collage';
+    scene.photos.forEach((ph, k) => {
+      const tile = document.createElement('figure');
+      tile.className = 'cc-tile';
+      tile.style.setProperty('--d', (0.05 + k * 0.06).toFixed(2) + 's');
+      const img = document.createElement('img');
+      img.src = ph.src;
+      img.alt = ph.caption || '';
+      img.addEventListener('error', () => {
+        tile.classList.add('missing');
+        img.remove();
+      });
+      tile.appendChild(img);
+      grid.appendChild(tile);
+    });
+    // fade the last single photo out and bring the recap grid in over it
+    const prev = win.querySelector('.photo-frame:not(.leave)');
+    if (prev) { prev.classList.add('leave'); after(640, () => prev.remove()); }
+    win.appendChild(grid);
   }
 
   function makePhotoFrame(ph, scene) {
@@ -401,6 +464,14 @@
     const img = document.createElement('img');
     img.alt = ph.caption;
     img.src = ph.src;
+    // respect each photo's real shape: landscapes show as landscapes, portraits
+    // as portraits — so nothing is force-cropped into the wrong orientation.
+    img.addEventListener('load', () => {
+      const r = img.naturalWidth / img.naturalHeight;
+      if (!r || !isFinite(r)) return;
+      frame.classList.add(r > 1.15 ? 'is-landscape' : r < 0.86 ? 'is-portrait' : 'is-square');
+      img.style.aspectRatio = Math.max(0.7, Math.min(1.62, r)).toFixed(3);
+    });
     img.addEventListener('error', () => {
       frame.classList.add('missing');
       img.remove();
@@ -539,11 +610,21 @@
     }, 2800);
   }
 
+  const tapCue = (show) => { const c = $('#tap-cue'); if (c) c.classList.toggle('show', show); };
+
   stage.addEventListener('pointerdown', e => {
     if (phase !== 'story' || busy) return;
     if (e.target.closest('button, input, textarea, a')) return;
     const mode = hud.dataset.chrome;
-    if (mode === 'ready' || mode === 'title') return;   // already on stage
+    if (mode === 'title') return;                       // the year card is still greeting
+    // while the year's photos are flowing, a tap holds on the one that struck a
+    // nerve; tapping again plays the rest of the year on.
+    if (photoCtl && photoCtl.active && !photoCtl.done) {
+      if (photoCtl.paused) { photoCtl.resume(); tapCue(false); setChrome('hidden'); }
+      else if (photoCtl.pause()) { tapCue(true); peekChrome(); }
+      return;
+    }
+    if (mode === 'ready') return;                       // chapter done, wands already on stage
     peekChrome();
   });
 
@@ -902,7 +983,7 @@
   function buildDirector() {
     const panel = document.createElement('div');
     panel.id = 'director';
-    panel.innerHTML = `<div class="dir-head">Director’s Panel <small>(prototype only)</small></div>
+    panel.innerHTML = `<div class="dir-head">Director’s Panel</div>
       <div class="dir-grid" id="dir-grid"></div>`;
     document.body.appendChild(panel);
     const grid = panel.querySelector('#dir-grid');

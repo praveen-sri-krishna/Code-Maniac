@@ -40,8 +40,8 @@ function readCaptions() {
   const lines = readFileSync(CSV, 'utf8').split(/\r?\n/);
   for (let i = 1; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
-    const [year, file, caption = ''] = parseLine(lines[i]);
-    if (year && file) map.set(`${year}/${file}`, caption);
+    const [year, file, caption = '', anim = ''] = parseLine(lines[i]);
+    if (year && file) map.set(`${year}/${file}`, { caption, anim: anim.trim() });
   }
   return map;
 }
@@ -57,14 +57,18 @@ for (const year of years) {
   const files = readdirSync(join(MEDIA, year)).filter(f => IMG.test(f)).sort(nat);
   if (!files.length) continue;
   manifest[year] = files.map(file => {
-    const caption = captions.get(`${year}/${file}`) ?? '';
-    rows.push([year, file, caption]);
-    return { file, caption };
+    const meta = captions.get(`${year}/${file}`) ?? { caption: '', anim: '' };
+    const caption = meta.caption ?? '';
+    const anim = meta.anim ?? '';
+    rows.push([year, file, caption, anim]);
+    const entry = { file, caption };
+    if (anim) entry.anim = anim;          // optional per-photo entrance animation
+    return entry;
   });
 }
 
 writeFileSync(OUT, JSON.stringify(manifest, null, 2) + '\n');
-writeFileSync(CSV, 'Year,Photo,Caption\n' + rows.map(([y, f, c]) => `${y},${f},${esc(c)}`).join('\n') + (rows.length ? '\n' : ''));
+writeFileSync(CSV, 'Year,Photo,Caption,Anim\n' + rows.map(([y, f, c, a]) => `${y},${f},${esc(c)},${esc(a || '')}`).join('\n') + (rows.length ? '\n' : ''));
 
 const total = rows.length;
 const missing = rows.filter(r => !r[2]).length;

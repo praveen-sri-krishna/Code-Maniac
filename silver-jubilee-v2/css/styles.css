@@ -283,7 +283,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .is-teaser .tc-tag { color: var(--accent); animation: pulseHint 2.6s 1s ease-in-out infinite; }
 .is-teaser .tc-year { font-size: 1rem; }
 
-.reel-window { position: absolute; inset: 0; display: grid; place-items: center; z-index: 7; }
+/* sit the carousel in a safe band: clear of the top pelmet/valance and the
+   bottom cues, so the red curtain header never covers a photo */
+.reel-window { position: absolute; top: 15.5vh; left: 0; right: 0; bottom: 10vh; display: grid; place-items: center; z-index: 7; }
 .reel-window > * { grid-area: 1 / 1; }   /* frames stack, so photos cross-fade */
 
 /* film-frame dots: where you are within a year (only while photos play) */
@@ -309,6 +311,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .ready-cue.show { opacity: 0.95; transform: none; animation: pulseHint 2.6s 1.2s ease-in-out infinite; }
 
+/* the pause hint: appears when a guest taps to hold on a photo mid-chapter */
+.tap-cue {
+  position: absolute; bottom: 13.6vh; left: 0; right: 0; z-index: 9; text-align: center;
+  font-family: var(--film-serif); font-size: 0.56rem; letter-spacing: 0.3em; text-indent: 0.3em;
+  color: var(--accent); opacity: 0; transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease; pointer-events: none;
+}
+.tap-cue.show { opacity: 0.9; transform: none; animation: pulseHint 2.2s 0.4s ease-in-out infinite; }
+
 /* the photo frame: Polaroid for colour, film-strip for B&W prologue */
 .photo-frame {
   position: relative; width: min(78vw, 360px); background: var(--paper);
@@ -316,8 +327,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .photo-frame img, .photo-placeholder {
   display: block; width: 100%; aspect-ratio: 4/5; object-fit: cover;
+  /* bias the crop upward so faces/heads are never sliced off the top */
+  object-position: center 22%;
   filter: var(--photo-filter); background: #2a211a;
 }
+/* the frame adapts to each photo's true orientation (set from JS on load),
+   so landscapes are shown wide and portraits tall — no forced cropping */
+.photo-frame.is-landscape { width: min(94vw, 540px); }
+.photo-frame.is-portrait  { width: min(72vw, 332px); }
 .photo-frame.film { padding: 16px 22px; background: #111; border-radius: 2px; }
 .photo-frame.film::before, .photo-frame.film::after {
   content: ''; position: absolute; top: 0; bottom: 0; width: 14px;
@@ -325,7 +342,26 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background-size: 14px 18px; background-repeat: repeat-y;
 }
 .photo-frame.film::before { left: 3px; } .photo-frame.film::after { right: 3px; }
-.photo-frame.film img { aspect-ratio: 4/3; }
+.photo-frame.film img { aspect-ratio: 4/5; object-position: center 18%; }
+
+/* end-of-chapter recap: every photo of the year as a tidy grid, shown before
+   the wand carries you on. Consistent across all chapters. */
+.chapter-collage {
+  display: grid; gap: 6px; width: min(94vw, 470px);
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  place-content: center; justify-items: center;
+}
+.cc-tile {
+  width: 100%; margin: 0; padding: 3px; background: var(--paper);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+  opacity: 0; transform: scale(0.82) translateY(10px);
+  animation: ccIn 0.5s ease forwards; animation-delay: var(--d);
+}
+.cc-tile img {
+  display: block; width: 100%; aspect-ratio: 1/1; object-fit: cover;
+  object-position: center 22%; filter: var(--photo-filter); background: #2a211a;
+}
+@keyframes ccIn { to { opacity: 1; transform: none; } }
 .photo-frame figcaption {
   font-family: var(--body-serif); font-style: italic; font-size: 1.18rem;
   text-align: center; color: #2c1d10; padding: 14px 8px 18px;
