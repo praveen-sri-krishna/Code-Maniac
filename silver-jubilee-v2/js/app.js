@@ -185,15 +185,34 @@
   function startMusic() {
     if (musicTried) return; musicTried = true;
     probeAudio('media/music/background', (ok, a) => {
-      if (!ok) { musicEl = null; return; }            // no track dropped in → synth ambient stays
-      musicEl = a; a.loop = true; a.volume = 0.0001; musicOn = true;
-      A.ambient(false);                               // let the real track be the bed, not the synth drone
-      if (!A.isMuted()) { a.play().catch(() => {}); fadeMusic(musicDucked ? MUSIC_DUCK : MUSIC_FULL); }
+      A.ambient(false);                               // music (real or generative) is the bed now
+      if (ok) {                                       // a real track was dropped in → it wins
+        musicEl = a; a.loop = true; a.volume = 0.0001; musicOn = true;
+        if (!A.isMuted()) { a.play().catch(() => {}); fadeMusic(musicDucked ? MUSIC_DUCK : MUSIC_FULL); }
+      } else {                                        // otherwise play the generative South-Indian score
+        musicEl = null; musicOn = true; A.scoreStart();
+      }
     });
   }
-  function duckMusic(on) { musicDucked = on; if (musicOn && !A.isMuted()) fadeMusic(on ? MUSIC_DUCK : MUSIC_FULL); }
-  function pauseMusic() { clearInterval(musicFade); if (musicEl) { try { musicEl.pause(); } catch (e) {} } }
-  function resumeMusic() { if (musicEl && musicOn && !A.isMuted()) { musicEl.play().catch(() => {}); fadeMusic(musicDucked ? MUSIC_DUCK : MUSIC_FULL); } }
+  function duckMusic(on) {
+    musicDucked = on;
+    if (musicEl) { if (musicOn && !A.isMuted()) fadeMusic(on ? MUSIC_DUCK : MUSIC_FULL); }
+    else A.scoreDuck(on);                             // dip the generative score under the voiceover
+  }
+  function pauseMusic() { clearInterval(musicFade); if (musicEl) { try { musicEl.pause(); } catch (e) {} } A.scorePause(); }
+  function resumeMusic() {
+    if (musicEl) { if (musicOn && !A.isMuted()) { musicEl.play().catch(() => {}); fadeMusic(musicDucked ? MUSIC_DUCK : MUSIC_FULL); } }
+    else A.scoreResume();
+  }
+  // 0 = B&W prologue → 1 = golden finale; drives the score's raga, brightness & density
+  function moodWarmth(scene) {
+    if (!scene) return 0.5;
+    if (scene.kind === 'prologue') return 0.05;
+    if (scene.kind === 'duet') return 0.12;
+    if (scene.kind === 'teaser') return 1.0;
+    if (scene.kind === 'chapter') return 0.15 + (scene.index / 24) * 0.8;
+    return 0.5;
+  }
 
   /* ---- per-year voiceover (drop-in: media/<year>/voice.mp3) ---------------- */
   let voiceEl = null;
@@ -218,8 +237,9 @@
     applyPalette(scene.palette);
     const token = ++renderToken;
     clearTimers();
-    A.ambient(!musicOn);                      // synth drone only when there's no real music track
+    A.ambient(!musicOn);                      // synth drone only when there's no music at all
     resumeMusic();                            // bed music resumes if we came back from the video page
+    A.scoreWarmth(moodWarmth(scene));         // evolve the score's mood to match the year
     stopVoice(); playVoice(scene);            // start this year's voiceover if one was dropped in
 
     if (scene.kind === 'duet') { renderDuet(scene, token); return; }
@@ -940,6 +960,7 @@
   function enterFinale() {
     phase = 'finale';
     A.ambient(false);
+    resumeMusic(); A.scoreWarmth(1);          // the score blooms full and golden for the finale
     timeTravel({ big: true }, () => {
       A.chime();
       sceneLayer.innerHTML = `

@@ -34,26 +34,24 @@ media/2024/voice.mp3
 
 ---
 
-## 2. 🎵 Background music (whole site)
+## 2. 🎵 Background music (whole site) — *optional, only if you want to override*
 
-One track that plays softly under the entire experience and loops. Pick something
-that fits the mood — a gentle A. R. Rahman piece or any soft, emotional
-instrumental works beautifully. It automatically dips under voiceovers and goes
-**silent on the family-video page** (so the video's own sound is clean).
+**You don't need to add anything here.** The site already plays its own original,
+South-Indian / A. R. Rahman-flavoured score — a tanpura drone with a bansuri-style
+flute melody — that *grows with the story*: wistful and minor in the early black-
+and-white years, brightening to a warm major bloom by the finale. It automatically
+dips under voiceovers and goes **silent on the family-video page**.
 
-**Where it goes — one file, named exactly:**
+Only add a file here if you'd rather replace that score with a **specific track**:
 
 ```
 media/music/background.mp3
 ```
 
-- Create the `media/music/` folder if it isn't there, and drop `background.mp3` in.
+- Create the `media/music/` folder, drop `background.mp3` in, and it takes over.
 - `.m4a` / `.ogg` also accepted (`background.m4a`).
 - Pick an instrumental (no lyrics) so it never competes with the voiceovers.
 - The 🔊 button (top-right) mutes/unmutes everything — music, voiceovers and effects.
-
-> Until you add this file, the site uses its soft built-in ambience. Adding a real
-> track is what makes it feel cinematic.
 
 ---
 
