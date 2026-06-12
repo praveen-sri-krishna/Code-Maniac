@@ -34,24 +34,29 @@ media/2024/voice.mp3
 
 ---
 
-## 2. 🎵 Background music (whole site) — *optional, only if you want to override*
+## 2. 🎵 Background music (whole site) — *already set; swap if you like*
 
-**You don't need to add anything here.** The site already plays its own original,
-South-Indian / A. R. Rahman-flavoured score — a tanpura drone with a bansuri-style
-flute melody — that *grows with the story*: wistful and minor in the early black-
-and-white years, brightening to a warm major bloom by the finale. It automatically
-dips under voiceovers and goes **silent on the family-video page**.
+The site already plays a real, cheerful, **Indian flute** instrumental as its
+background bed (sitar + bansuri + tabla groove). It loops softly, automatically
+**dips under voiceovers**, and goes **silent on the family-video page**.
 
-Only add a file here if you'd rather replace that score with a **specific track**:
+The file lives at **`media/music/background.mp3`** — to use a different song
+(a specific Rahman instrumental, anything), just **replace that one file** with
+your own, same name:
 
 ```
 media/music/background.mp3
 ```
 
-- Create the `media/music/` folder, drop `background.mp3` in, and it takes over.
-- `.m4a` / `.ogg` also accepted (`background.m4a`).
+- Keep the name `background.mp3` (or `.m4a` / `.ogg`).
 - Pick an instrumental (no lyrics) so it never competes with the voiceovers.
 - The 🔊 button (top-right) mutes/unmutes everything — music, voiceovers and effects.
+- *Behind the scenes:* if this file is ever missing, the site falls back to an
+  original generative score that evolves with the story — so there's always music.
+
+> **Music credit:** the default track is *"Vadodora"* by **Kevin MacLeod**
+> (incompetech.com), licensed CC-BY 4.0. If you swap in your own track, this no
+> longer applies.
 
 ---
 

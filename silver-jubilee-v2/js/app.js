@@ -168,7 +168,7 @@
 
   /* ---- background music (drop-in: media/music/background.mp3) -------------- */
   let musicEl = null, musicOn = false, musicTried = false, musicDucked = false, musicFade = null;
-  const MUSIC_FULL = 0.34, MUSIC_DUCK = 0.10;
+  const MUSIC_FULL = 0.46, MUSIC_DUCK = 0.13;   // clearly present; dips under voiceovers
   function fadeMusic(target) {
     if (!musicEl) return;
     clearInterval(musicFade);
