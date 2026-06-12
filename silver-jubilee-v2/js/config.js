@@ -14,4 +14,9 @@
 window.SJ_CONFIG = {
   SUPABASE_URL: '',        // e.g. 'https://abcdefghijklmnop.supabase.co'
   SUPABASE_ANON_KEY: '',   // the project's "anon public" key (a long eyJ... string)
+
+  /* Family video shape. 'auto' detects it from your file automatically (just drop
+     a portrait or landscape video and it fits). Force it with 'portrait' or
+     'landscape' if you ever need to. */
+  VIDEO_ORIENTATION: 'auto',   // 'auto' | 'portrait' | 'landscape'
 };

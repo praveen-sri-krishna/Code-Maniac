@@ -95,6 +95,10 @@ media/finale/family.mp4
 ```
 
 - Keep it **`.mp4`** (H.264) so phones play it smoothly.
+- **Orientation is automatic** — drop a **portrait** or **landscape** video and the
+  frame fits its shape on its own. Nothing to set.
+- Need to force it? Set `VIDEO_ORIENTATION` in **`js/config.js`** to `'portrait'`
+  or `'landscape'` (default is `'auto'`).
 
 ---
 

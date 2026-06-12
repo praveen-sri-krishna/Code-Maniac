@@ -922,11 +922,25 @@
           <button class="ghost-btn" id="to-wishes">Continue to the Wishes Wall →</button>
         </div>`;
       const v = $('#family-video');
-      v.src = 'media/finale/family.mp4';
+      const frame = v.closest('.video-frame');
+      const orient = (window.SJ_CONFIG && window.SJ_CONFIG.VIDEO_ORIENTATION) || 'auto';
+      const setOrient = (portrait, ratio) => {
+        if (!frame) return;
+        frame.classList.toggle('is-portrait', !!portrait);
+        if (ratio && isFinite(ratio)) frame.style.aspectRatio = ratio.toFixed(4);
+      };
+      if (orient === 'portrait') setOrient(true, 9 / 16);
+      else if (orient === 'landscape') setOrient(false, 16 / 9);
+      v.addEventListener('loadedmetadata', () => {        // 'auto' → match the real file's shape
+        if (orient !== 'auto') return;
+        const r = v.videoWidth / v.videoHeight;
+        if (r && isFinite(r)) setOrient(r < 1, r);
+      });
       v.addEventListener('error', () => {
         v.style.display = 'none';
         $('#video-fallback').style.display = 'flex';
       });
+      v.src = 'media/finale/family.mp4';
       v.play?.().catch(() => {});
       $('#to-wishes').addEventListener('click', enterWishes, { once: true });
     });
