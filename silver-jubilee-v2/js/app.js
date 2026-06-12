@@ -184,15 +184,16 @@
   }
   function startMusic() {
     if (musicTried) return; musicTried = true;
-    probeAudio('media/music/background', (ok, a) => {
-      A.ambient(false);                               // music (real or generative) is the bed now
-      if (ok) {                                       // a real track was dropped in → it wins
-        musicEl = a; a.loop = true; a.volume = 0.0001; musicOn = true;
-        if (!A.isMuted()) { a.play().catch(() => {}); fadeMusic(musicDucked ? MUSIC_DUCK : MUSIC_FULL); }
-      } else {                                        // otherwise play the generative South-Indian score
-        musicEl = null; musicOn = true; A.scoreStart();
-      }
-    });
+    A.ambient(false);                                 // music is the bed now
+    // IMPORTANT: mobile browsers only let audio start *inside* the tap handler,
+    // so kick the real track off synchronously here — not after an async probe.
+    const a = new Audio('media/music/background.mp3');
+    a.loop = true; a.volume = musicDucked ? MUSIC_DUCK : MUSIC_FULL;
+    a.addEventListener('error', () => {               // no/invalid file → generative score instead
+      if (musicEl === a) { musicEl = null; A.scoreStart(); }
+    }, { once: true });
+    musicEl = a; musicOn = true;
+    a.play().catch(() => {});                          // unlocked by the seal/tap gesture
   }
   function duckMusic(on) {
     musicDucked = on;
@@ -1103,6 +1104,14 @@
     if (m) pauseMusic(); else resumeMusic();                                        // and the bed music
     A.ambient(!m && !musicOn);
   });
+
+  // mobile autoplay safety net: any tap resumes the audio context and the bed
+  // music (except on the silent video page), in case the first attempt was blocked.
+  const unlockOnGesture = () => {
+    A.unlock();
+    if (phase !== 'gift' && musicEl && musicEl.paused && !A.isMuted()) musicEl.play().catch(() => {});
+  };
+  ['pointerdown', 'touchend', 'click'].forEach(ev => window.addEventListener(ev, unlockOnGesture, { passive: true }));
 
   /* golden dust drifting through the spotlight — the stage breathes even
      when nothing is happening. Tinted live by each year's accent colour. */

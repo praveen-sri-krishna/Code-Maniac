@@ -36,8 +36,8 @@ media/2024/voice.mp3
 
 ## 2. 🎵 Background music (whole site) — *already set; swap if you like*
 
-The site already plays a real, cheerful, **Indian flute** instrumental as its
-background bed (sitar + bansuri + tabla groove). It loops softly, automatically
+The site already plays a real, calm **flute** instrumental as its background bed —
+gentle and warm, a soft pentatonic flute piece. It loops, automatically
 **dips under voiceovers**, and goes **silent on the family-video page**.
 
 The file lives at **`media/music/background.mp3`** — to use a different song
@@ -54,7 +54,7 @@ media/music/background.mp3
 - *Behind the scenes:* if this file is ever missing, the site falls back to an
   original generative score that evolves with the story — so there's always music.
 
-> **Music credit:** the default track is *"Vadodora"* by **Kevin MacLeod**
+> **Music credit:** the default track is *"Healing"* by **Kevin MacLeod**
 > (incompetech.com), licensed CC-BY 4.0. If you swap in your own track, this no
 > longer applies.
 
