@@ -99,6 +99,7 @@
   /* the seal cracks, the flap lifts, the envelope sinks away — then the host */
   function openInvite() {
     A.unlock(); A.sparkle();
+    startMusic();                             // the emotional background bed begins (if a track was added)
     const invite = $('#invite');
     const seal = $('#invite-seal');
     const r = seal.getBoundingClientRect();
@@ -145,12 +146,81 @@
   /* =========================================================================
      SCENE RENDER (prologue + chapters share the same player)
      ====================================================================== */
+  /* =========================================================================
+     PER-YEAR VOICEOVER — pure drop-in, no code or manifest changes needed.
+     Put a clip at  media/<year>/voice.mp3  (or .m4a / .ogg) and it plays when
+     that chapter opens. Missing files are ignored silently. Respects mute and
+     stops when you leave the chapter.
+     ====================================================================== */
+  const FORMATS = ['mp3', 'm4a', 'ogg'];
+  const probeAudio = (basePath, onReady) => {
+    // try each format in turn; resolve with the <audio> once one can play, else null
+    let i = 0; const a = new Audio(); a.preload = 'auto';
+    const next = () => {
+      if (i >= FORMATS.length) { onReady(null, a); return; }
+      a.src = `${basePath}.${FORMATS[i++]}`; a.load();
+    };
+    a.addEventListener('canplay', () => onReady(a, a), { once: true });
+    a.addEventListener('error', next);
+    next();
+    return a;
+  };
+
+  /* ---- background music (drop-in: media/music/background.mp3) -------------- */
+  let musicEl = null, musicOn = false, musicTried = false, musicDucked = false, musicFade = null;
+  const MUSIC_FULL = 0.34, MUSIC_DUCK = 0.10;
+  function fadeMusic(target) {
+    if (!musicEl) return;
+    clearInterval(musicFade);
+    const step = (target - musicEl.volume) / 14;
+    musicFade = setInterval(() => {
+      if (!musicEl) { clearInterval(musicFade); return; }
+      let v = musicEl.volume + step;
+      if (Math.abs(target - v) < 0.006 || (step > 0 && v >= target) || (step < 0 && v <= target)) {
+        v = target; clearInterval(musicFade);
+      }
+      musicEl.volume = Math.max(0, Math.min(1, v));
+    }, 45);
+  }
+  function startMusic() {
+    if (musicTried) return; musicTried = true;
+    probeAudio('media/music/background', (ok, a) => {
+      if (!ok) { musicEl = null; return; }            // no track dropped in → synth ambient stays
+      musicEl = a; a.loop = true; a.volume = 0.0001; musicOn = true;
+      A.ambient(false);                               // let the real track be the bed, not the synth drone
+      if (!A.isMuted()) { a.play().catch(() => {}); fadeMusic(musicDucked ? MUSIC_DUCK : MUSIC_FULL); }
+    });
+  }
+  function duckMusic(on) { musicDucked = on; if (musicOn && !A.isMuted()) fadeMusic(on ? MUSIC_DUCK : MUSIC_FULL); }
+  function pauseMusic() { clearInterval(musicFade); if (musicEl) { try { musicEl.pause(); } catch (e) {} } }
+  function resumeMusic() { if (musicEl && musicOn && !A.isMuted()) { musicEl.play().catch(() => {}); fadeMusic(musicDucked ? MUSIC_DUCK : MUSIC_FULL); } }
+
+  /* ---- per-year voiceover (drop-in: media/<year>/voice.mp3) ---------------- */
+  let voiceEl = null;
+  function stopVoice() {
+    if (voiceEl) { try { voiceEl.pause(); } catch (e) {} voiceEl.src = ''; voiceEl = null; }
+    duckMusic(false);                                 // lift the music back up
+  }
+  function playVoice(scene) {
+    stopVoice();
+    if (!scene || !scene.year) return;
+    const a = probeAudio(`media/${scene.year}/voice`, (ok) => {
+      if (!ok || voiceEl !== a) return;               // no clip for this year
+      if (!A.isMuted()) { a.play().catch(() => {}); duckMusic(true); }   // boost voice, dip the music
+    });
+    voiceEl = a;
+    a.volume = 1;
+    a.addEventListener('ended', () => { if (voiceEl === a) duckMusic(false); });
+  }
+
   function renderScene(i) {
     const scene = SCENES[i];
     applyPalette(scene.palette);
     const token = ++renderToken;
     clearTimers();
-    A.ambient(true);
+    A.ambient(!musicOn);                      // synth drone only when there's no real music track
+    resumeMusic();                            // bed music resumes if we came back from the video page
+    stopVoice(); playVoice(scene);            // start this year's voiceover if one was dropped in
 
     if (scene.kind === 'duet') { renderDuet(scene, token); return; }
 
@@ -736,6 +806,8 @@
      STAGE 3 — THE GIFT BOX REVEAL
      ====================================================================== */
   function enterGift() {
+    stopVoice();                              // the chapters are done; silence any year voiceover
+    pauseMusic();                             // the family video owns the audio here — no bed music
     phase = 'gift';
     A.ambient(false);
     applyPalette({ bg1: '#241405', bg2: '#5e3410', accent: '#ffd24a', sepia: 0, sat: 1.2, grayscale: 0 });
@@ -802,6 +874,7 @@
      ====================================================================== */
   function enterWishes() {
     phase = 'wishes';
+    resumeMusic();                            // bring the bed music back for the wishes wall + finale
     timeTravel({}, () => {
       sceneLayer.innerHTML = `
         <div class="wishes-scene">
@@ -1005,6 +1078,9 @@
     const m = !A.isMuted(); A.setMuted(m);
     e.currentTarget.textContent = m ? '🔇' : '🔊';
     e.currentTarget.classList.toggle('off', m);
+    if (voiceEl) { if (m) voiceEl.pause(); else voiceEl.play().catch(() => {}); }   // mute the voiceover too
+    if (m) pauseMusic(); else resumeMusic();                                        // and the bed music
+    A.ambient(!m && !musicOn);
   });
 
   /* golden dust drifting through the spotlight — the stage breathes even
