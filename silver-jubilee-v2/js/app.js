@@ -596,12 +596,52 @@
      (Prototype storage: localStorage. PROD: same Supabase table pattern as
      the wishes wall — see README.)
      ====================================================================== */
-  const memoStore = () => JSON.parse(localStorage.getItem('sj_memos') || '{}');
-  const memosFor = src => memoStore()[src] || [];
+  /* live backend: Supabase if js/config.js is filled in, else this browser only */
+  let _sb = null, _sbTried = false;
+  function supa() {
+    if (_sbTried) return _sb;
+    _sbTried = true;
+    const cfg = window.SJ_CONFIG || {};
+    if (cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && window.supabase) {
+      try { _sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY); } catch (e) { _sb = null; }
+    }
+    return _sb;
+  }
+
+  const memoLocal = () => JSON.parse(localStorage.getItem('sj_memos') || '{}');
+  let _memoCache = null;                          // { photoSrc: [{name,msg}] } when online
+  let _sheetSrc = null, _sheetRender = null;      // the currently-open memory sheet, for live refresh
+  const memosFor = src => supa() ? ((_memoCache && _memoCache[src]) || []) : (memoLocal()[src] || []);
+  function refreshMemoSheet(src) {
+    document.querySelectorAll(`.photo-frame[data-src="${CSS.escape(src)}"]`).forEach(f => refreshMemoBadge(f, src));
+    if (_sheetSrc === src && _sheetRender) _sheetRender();
+  }
   function addMemo(src, m) {
-    const s = memoStore();
-    (s[src] = s[src] || []).unshift(m);
-    localStorage.setItem('sj_memos', JSON.stringify(s));
+    const sb = supa();
+    if (sb) {                                     // realtime echo updates the cache + UI
+      sb.from('memos').insert({ photo: src, name: m.name, msg: m.msg }).then(({ error }) => {
+        if (error) { _memoCache = _memoCache || {}; (_memoCache[src] = _memoCache[src] || []).unshift(m); refreshMemoSheet(src); }
+      });
+      return;
+    }
+    const s = memoLocal(); (s[src] = s[src] || []).unshift(m); localStorage.setItem('sj_memos', JSON.stringify(s));
+  }
+  async function initMemos() {
+    const sb = supa(); if (!sb) return;
+    _memoCache = {};
+    try {
+      const { data } = await sb.from('memos').select('photo,name,msg,created_at').order('created_at', { ascending: false });
+      (data || []).forEach(m => { (_memoCache[m.photo] = _memoCache[m.photo] || []).push({ name: m.name, msg: m.msg }); });
+    } catch (e) {}
+    document.querySelectorAll('.photo-frame[data-src]').forEach(f => refreshMemoBadge(f, f.dataset.src));
+    try {
+      sb.channel('memos').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'memos' }, ({ new: m }) => {
+        _memoCache = _memoCache || {};
+        const arr = (_memoCache[m.photo] = _memoCache[m.photo] || []);
+        if (!arr.some(x => x.name === m.name && x.msg === m.msg)) arr.unshift({ name: m.name, msg: m.msg });
+        refreshMemoSheet(m.photo);
+      }).subscribe();
+    } catch (e) {}
   }
   function refreshMemoBadge(frame, src) {
     const n = memosFor(src).length;
@@ -638,11 +678,13 @@
         : `<p class="ms-empty">No memories pinned yet — be the first ✦</p>`;
     };
     renderList();
+    _sheetSrc = ph.src; _sheetRender = renderList;   // let live updates refresh this open sheet
 
     const close = () => {
       sheet.classList.remove('open');
       setTimeout(() => sheet.remove(), 450);
       sheetOpen = false;
+      _sheetSrc = null; _sheetRender = null;
       // bring any badge for this photo up to date
       document.querySelectorAll(`.photo-frame[data-src="${CSS.escape(ph.src)}"]`)
         .forEach(f => refreshMemoBadge(f, ph.src));
@@ -918,7 +960,23 @@
     });
   }
 
-  function seedWishes() {
+  let _wishesSubscribed = false;
+  async function seedWishes() {
+    const sb = supa();
+    if (sb) {                                     // load existing wishes + go live for everyone
+      try {
+        const { data } = await sb.from('wishes').select('name,msg,created_at').order('created_at', { ascending: true }).limit(200);
+        (data || []).forEach((w, i) => pinWish({ name: w.name, msg: w.msg }, Math.min(i * 60, 1200), false));
+      } catch (e) {}
+      if (!_wishesSubscribed) {
+        _wishesSubscribed = true;
+        try {
+          sb.channel('wishes').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wishes' },
+            ({ new: w }) => pinWish({ name: w.name, msg: w.msg }, 0, true)).subscribe();
+        } catch (e) {}
+      }
+      return;
+    }
     const seed = JSON.parse(localStorage.getItem('sj_wishes') || 'null') || [
       { name: 'Amma & Appa’s friends', msg: 'Here’s to 25 more!' },
       { name: 'The Cousins', msg: 'You two are couple goals 💛' },
@@ -946,13 +1004,17 @@
     const name = $('#wish-name').value.trim();
     const msg = $('#wish-msg').value.trim();
     if (!name || !msg) return;
+    e.target.reset();
+    const sb = supa();
+    if (sb) {                                     // realtime subscription pins it for everyone (incl. us)
+      sb.from('wishes').insert({ name, msg }).then(({ error }) => { if (error) pinWish({ name, msg }, 0, true); });
+      return;
+    }
     const w = { name, msg };
     pinWish(w, 0, true);
     const store = JSON.parse(localStorage.getItem('sj_wishes') || '[]');
     store.unshift(w);
     localStorage.setItem('sj_wishes', JSON.stringify(store.slice(0, 60)));
-    e.target.reset();
-    /* PROD: also insert into Supabase + rely on realtime subscription. See README. */
   }
 
   /* =========================================================================
@@ -1135,6 +1197,7 @@
   wandNext.insertAdjacentHTML('afterbegin', wandSVG());
   buildAtmosphere();
   buildDirector();
+  initMemos();                                    // load + subscribe to live photo memories (if Supabase is set)
   // load real photos if a manifest exists (served over http); otherwise the
   // vintage placeholders stand in. file:// has no fetch, so it falls back too.
   // 1) manifest = which photos exist (+ animation). 2) captions.csv = the live
