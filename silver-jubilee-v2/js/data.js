@@ -171,7 +171,7 @@ const COLOUR_BASE = [
   { year: 2022, title: 'The Best Is Yet To Come', milestone: false },
   { year: 2023, title: 'Love, Louder Than Ever',  milestone: false },
   { year: 2024, title: 'A Year Dressed in Joy',   milestone: false },
-  { year: 2025, title: 'Laughter & Happy Tears',  milestone: true,  tag: 'Silver Jubilee' },
+  { year: 2025, title: 'Laughter & Happy Tears',  milestone: true },
 ];
 
 /* sample captions per chapter (placeholder tone) + animation variety */
