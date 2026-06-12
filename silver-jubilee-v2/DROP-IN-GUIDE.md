@@ -4,8 +4,31 @@ You never edit any code. You just **add a file with the exact name, in the exact
 folder**, and the website picks it up automatically. After you add a file, the
 live site refreshes within about a minute.
 
-There are **three** things you can add. Each is optional — anything you don't add
-simply doesn't play, and nothing breaks.
+There are **three** things you can add, plus one you can **edit** — the captions.
+
+---
+
+## ✍️ 0. Change any caption (the words under a photo)
+
+All caption text lives in **one file: `media/captions.csv`**. The website reads it
+**directly**, so to change what's written under any photo you just edit that file —
+**no rebuild, no code.** Change it, save/commit, and the new caption shows on the
+next refresh.
+
+The file has one row per photo:
+
+| Year | Photo  | Caption | Anim |
+|------|--------|---------|------|
+| 2003 | 01.jpg | Her first birthday, your first of so many. | kenburns |
+| 2003 | 02.jpg | Three of us now, out in the world. | popup |
+
+- Only edit the **Caption** column. Leave **Year** and **Photo** alone — that's how
+  the site knows which picture the caption belongs to.
+- Easiest: open it in **Google Sheets / Excel / Numbers**, edit the Caption cells,
+  and export back as CSV (it handles commas/quotes for you).
+- If you edit it as plain text and your caption contains a **comma**, wrap the whole
+  caption in double quotes, e.g. `2003,01.jpg,"Tea, talks, and tiny feet.",kenburns`.
+- Leave a caption blank to show the photo with no words.
 
 ---
 
@@ -93,6 +116,7 @@ That's it: **drop the file with the right name → commit → refresh.**
 
 | What | Exact path | Plays when |
 |------|------------|-----------|
+| **Edit a caption** | `media/captions.csv` (Caption column) | shows on next refresh |
 | Voiceover for a year | `media/<year>/voice.mp3` | that chapter opens (music dips) |
 | Background music | `media/music/background.mp3` | the whole site, looping softly |
 | Family video | `media/finale/family.mp4` | the gift-box reveal (music pauses) |

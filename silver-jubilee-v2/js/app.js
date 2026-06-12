@@ -1137,9 +1137,16 @@
   buildDirector();
   // load real photos if a manifest exists (served over http); otherwise the
   // vintage placeholders stand in. file:// has no fetch, so it falls back too.
+  // 1) manifest = which photos exist (+ animation). 2) captions.csv = the live
+  // caption text, read straight from the CSV so editing it changes captions with
+  // no rebuild. The CSV overrides the manifest's captions, so it's the one place
+  // to edit them.
   fetch('media/manifest.json', { cache: 'no-store' })
     .then(r => (r.ok ? r.json() : null))
     .then(m => { try { SJ_DATA.applyManifest(m); } catch (e) {} })
+    .then(() => fetch('media/captions.csv', { cache: 'no-store' }))
+    .then(r => (r && r.ok ? r.text() : null))
+    .then(t => { try { SJ_DATA.applyCaptions(t); } catch (e) {} })
     .catch(() => {})
     .finally(buildOpening);
 })();

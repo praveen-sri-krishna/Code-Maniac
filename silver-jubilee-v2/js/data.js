@@ -299,4 +299,36 @@ function applyManifest(manifest) {
   });
 }
 
-window.SJ_DATA = { SCENES, COPY, paletteForColourChapter, PROLOGUE_PALETTE, applyManifest };
+/* ---- live captions from media/captions.csv --------------------------------
+   The website reads captions.csv directly at runtime and overrides each photo's
+   caption by its Year + Photo. So to change any caption you ONLY edit that CSV
+   (column "Caption") — no rebuild, no code. The site picks it up on next load. */
+function parseCsvLine(line) {
+  const out = []; let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (q) { if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === ',') { out.push(cur); cur = ''; }
+    else if (c === '"') { q = true; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out.map(s => s.trim());
+}
+function applyCaptions(csvText) {
+  if (!csvText) return;
+  const map = new Map();
+  const lines = csvText.split(/\r?\n/);
+  for (let i = 1; i < lines.length; i++) {            // skip the header row
+    if (!lines[i].trim()) continue;
+    const [year, file, caption = ''] = parseCsvLine(lines[i]);
+    if (year && file) map.set(`media/${year}/${file}`, caption);
+  }
+  const over = (arr) => { if (Array.isArray(arr)) arr.forEach(p => { if (map.has(p.src)) p.caption = map.get(p.src); }); };
+  SCENES.forEach(scene => {
+    over(scene.photos);
+    if (scene.kind === 'duet') { over(scene.him && scene.him.photos); over(scene.her && scene.her.photos); }
+  });
+}
+
+window.SJ_DATA = { SCENES, COPY, paletteForColourChapter, PROLOGUE_PALETTE, applyManifest, applyCaptions };
