@@ -155,11 +155,11 @@ const COLOUR_BASE = [
   { year: 2006, title: 'Just the Three of Us',    milestone: false },
   { year: 2007, title: 'Then There Were Four',    milestone: true,  tag: 'Sammu Arrives' },
   { year: 2008, title: 'Full House',              milestone: false },
-  { year: 2009, title: 'Growing Pains & Joys',    milestone: false },
+  { year: 2009, title: 'Wherever We Wandered',    milestone: false },
   { year: 2010, title: 'The Good Chaos',          milestone: false },
   { year: 2011, title: 'A Decade of Us',          milestone: true },
   { year: 2012, title: 'Still Laughing',          milestone: false },
-  { year: 2013, title: 'The Kids Are Watching',   milestone: false },
+  { year: 2013, title: 'Days Worth Keeping',      milestone: false },
   { year: 2014, title: 'Our Own Four Walls',      milestone: true,  tag: 'The House' },
   { year: 2015, title: 'Room to Grow',            milestone: false },
   { year: 2016, title: 'The Sweet Middle',        milestone: false },
@@ -170,8 +170,8 @@ const COLOUR_BASE = [
   { year: 2021, title: 'Two Decades Deep',        milestone: true },
   { year: 2022, title: 'The Best Is Yet To Come', milestone: false },
   { year: 2023, title: 'Love, Louder Than Ever',  milestone: false },
-  { year: 2024, title: 'Almost There…',           milestone: false },
-  { year: 2025, title: 'One More Sunrise',        milestone: true,  tag: 'Silver Jubilee' },
+  { year: 2024, title: 'A Year Dressed in Joy',   milestone: false },
+  { year: 2025, title: 'Laughter & Happy Tears',  milestone: true,  tag: 'Silver Jubilee' },
 ];
 
 /* sample captions per chapter (placeholder tone) + animation variety */

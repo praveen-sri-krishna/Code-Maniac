@@ -32,7 +32,7 @@
     travelBig: 2600,   // the big opening sweep back to 1974
     titleHold: 1700,   // how long a chapter title card lingers
     trick:     3200,   // how long a magic set-piece plays
-    photo:     1300,   // how long each photo holds (auto-flow; tap to pause on one)
+    photo:     3300,   // how long each photo holds (auto-flow; tap to pause on one)
   };
   const PHOTO_MS = MOTION.photo;
   const after = (ms, fn) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
